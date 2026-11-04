@@ -1,0 +1,239 @@
+# =============================================================================
+# SIEM con Elastic Stack - Proyecto 8, Grupo 5
+# Arranque:  docker compose up -d --build      (ver README.md)
+# =============================================================================
+name: siem
+
+x-es-comun: &es-comun
+  image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+  depends_on:
+    setup:
+      condition: service_healthy
+  networks: [siem]
+  ulimits:
+    memlock: { soft: -1, hard: -1 }
+    nofile: { soft: 65536, hard: 65536 }
+  mem_limit: ${ES_MEM_LIMIT}
+  healthcheck:
+    test: ["CMD-SHELL", "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"]
+    interval: 10s
+    timeout: 10s
+    retries: 120
+
+x-es-env: &es-env
+  cluster.name: ${CLUSTER_NAME}
+  cluster.initial_master_nodes: es01,es02,es03
+  ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+  bootstrap.memory_lock: "true"
+  ES_JAVA_OPTS: -Xms${ES_HEAP} -Xmx${ES_HEAP}
+  xpack.security.enabled: "true"
+  xpack.security.http.ssl.enabled: "true"
+  xpack.security.http.ssl.certificate_authorities: certs/ca/ca.crt
+  xpack.security.transport.ssl.enabled: "true"
+  xpack.security.transport.ssl.certificate_authorities: certs/ca/ca.crt
+  xpack.security.transport.ssl.verification_mode: certificate
+  xpack.license.self_generated.type: basic
+
+volumes:
+  certs:
+  es01-data:
+  es02-data:
+  es03-data:
+  kibana-data:
+  logstash-data:
+  victima-logs:
+
+networks:
+  siem:
+
+services:
+  # ---------------------------------------------------------------------------
+  # setup: crea la CA y los certificados, y después configura el clúster
+  # (contraseñas, rol de Logstash, ILM e index templates). Corre una vez.
+  # ---------------------------------------------------------------------------
+  setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    user: "0"
+    networks: [siem]
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - ./setup:/setup:ro
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      KIBANA_PASSWORD: ${KIBANA_PASSWORD}
+      LOGSTASH_PASSWORD: ${LOGSTASH_PASSWORD}
+    command: ["bash", "/setup/elasticsearch-setup.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f config/certs/es03/es03.crt ]"]
+      interval: 2s
+      timeout: 5s
+      retries: 120
+
+  # ---------------------------------------------------------------------------
+  # Elasticsearch: 3 nodos (master + data los tres) -> clúster green con 1 réplica
+  # ---------------------------------------------------------------------------
+  es01:
+    <<: *es-comun
+    hostname: es01
+    ports: ["9200:9200"]
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - es01-data:/usr/share/elasticsearch/data
+    environment:
+      <<: *es-env
+      node.name: es01
+      discovery.seed_hosts: es02,es03
+      xpack.security.http.ssl.key: certs/es01/es01.key
+      xpack.security.http.ssl.certificate: certs/es01/es01.crt
+      xpack.security.transport.ssl.key: certs/es01/es01.key
+      xpack.security.transport.ssl.certificate: certs/es01/es01.crt
+
+  es02:
+    <<: *es-comun
+    hostname: es02
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - es02-data:/usr/share/elasticsearch/data
+    environment:
+      <<: *es-env
+      node.name: es02
+      discovery.seed_hosts: es01,es03
+      xpack.security.http.ssl.key: certs/es02/es02.key
+      xpack.security.http.ssl.certificate: certs/es02/es02.crt
+      xpack.security.transport.ssl.key: certs/es02/es02.key
+      xpack.security.transport.ssl.certificate: certs/es02/es02.crt
+
+  es03:
+    <<: *es-comun
+    hostname: es03
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - es03-data:/usr/share/elasticsearch/data
+    environment:
+      <<: *es-env
+      node.name: es03
+      discovery.seed_hosts: es01,es02
+      xpack.security.http.ssl.key: certs/es03/es03.key
+      xpack.security.http.ssl.certificate: certs/es03/es03.crt
+      xpack.security.transport.ssl.key: certs/es03/es03.key
+      xpack.security.transport.ssl.certificate: certs/es03/es03.crt
+
+  # ---------------------------------------------------------------------------
+  # Kibana: dashboards, Discover y Security (reglas de detección)
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    networks: [siem]
+    depends_on:
+      es01: { condition: service_healthy }
+      es02: { condition: service_healthy }
+      es03: { condition: service_healthy }
+      setup: { condition: service_completed_successfully }
+    ports: ["5601:5601"]
+    mem_limit: ${KB_MEM_LIMIT}
+    volumes:
+      - certs:/usr/share/kibana/config/certs:ro
+      - kibana-data:/usr/share/kibana/data
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    environment:
+      KIBANA_PASSWORD: ${KIBANA_PASSWORD}
+      KIBANA_ENCRYPTION_KEY: ${KIBANA_ENCRYPTION_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  # ---------------------------------------------------------------------------
+  # kibana-setup: data views, reglas de detección y dashboards (corre una vez)
+  # ---------------------------------------------------------------------------
+  kibana-setup:
+    image: python:3.12-slim
+    networks: [siem]
+    depends_on:
+      kibana: { condition: service_healthy }
+    volumes:
+      - ./setup/kibana_setup.py:/app/kibana_setup.py:ro
+      - ./reglas:/app/reglas:ro
+      - ./kibana/dashboards:/app/dashboards:ro
+    environment:
+      KIBANA_URL: http://kibana:5601
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    command: ["python", "-u", "/app/kibana_setup.py"]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Logstash: grok + mutate + geoip, y los malformados a logs-siem.errores
+  # ---------------------------------------------------------------------------
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
+    networks: [siem]
+    depends_on:
+      es01: { condition: service_healthy }
+      setup: { condition: service_completed_successfully }
+    ports: ["9600:9600"]
+    mem_limit: ${LS_MEM_LIMIT}
+    volumes:
+      - certs:/usr/share/logstash/config/certs:ro
+      - logstash-data:/usr/share/logstash/data
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      LOGSTASH_PASSWORD: ${LOGSTASH_PASSWORD}
+      LS_JAVA_OPTS: -Xms${LS_HEAP} -Xmx${LS_HEAP}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9600/ > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+
+  # ---------------------------------------------------------------------------
+  # Filebeat: lee los logs de la víctima y el histórico, y los manda a Logstash
+  # ---------------------------------------------------------------------------
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
+    user: root
+    networks: [siem]
+    depends_on:
+      logstash: { condition: service_healthy }
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - victima-logs:/logs/victima:ro
+      - ./datos/historico:/logs/historico:ro
+    command: ["filebeat", "-e", "--strict.perms=false"]
+
+  # ---------------------------------------------------------------------------
+  # victima: servidor "real" con sshd, nginx y puertos señuelo.
+  # Escribe auth.log, syslog y access.log de verdad.
+  # ---------------------------------------------------------------------------
+  victima:
+    build: ./victima
+    hostname: victima
+    networks: [siem]
+    ports: ["8080:80"]
+    volumes:
+      - victima-logs:/var/log
+    environment:
+      ADMIN_PASSWORD: ${VICTIMA_ADMIN_PASSWORD}
+      OPERADOR_PASSWORD: ${VICTIMA_OPERADOR_PASSWORD}
+
+  # ---------------------------------------------------------------------------
+  # trafico: usuarios "normales" (web y SSH legítimo) para que haya línea base
+  # ---------------------------------------------------------------------------
+  trafico:
+    build: ./atacante
+    networks: [siem]
+    depends_on: [victima]
+    environment:
+      OPERADOR_PASSWORD: ${VICTIMA_OPERADOR_PASSWORD}
+    command: ["normal"]
+
+  # ---------------------------------------------------------------------------
+  # atacante: nmap, hydra, sqlmap y curl. Solo corre a pedido:
+  #   docker compose run --rm atacante fuerza-bruta | escaneo | sqli | rutas | todo
+  # ---------------------------------------------------------------------------
+  atacante:
+    build: ./atacante
+    networks: [siem]
+    profiles: ["ataque"]
+    depends_on: [victima]

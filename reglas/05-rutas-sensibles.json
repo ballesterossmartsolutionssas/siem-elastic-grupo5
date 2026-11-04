@@ -1,0 +1,45 @@
+{
+  "rule_id": "siem-g5-rutas-sensibles",
+  "name": "SIEM - Acceso a rutas sensibles",
+  "description": "Peticiones a /.env, /.git, /admin, /phpmyadmin, /wp-admin y similares. Playbook: docs/playbooks/inyeccion-sql.md",
+  "type": "query",
+  "index": [
+    "logs-siem.nginx-*"
+  ],
+  "query": "siem.ruta_sensible : true",
+  "severity": "medium",
+  "risk_score": 47,
+  "tags": [
+    "SIEM",
+    "Web",
+    "Rutas sensibles",
+    "R8.4"
+  ],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0043",
+        "name": "Reconnaissance",
+        "reference": "https://attack.mitre.org/tactics/TA0043/"
+      },
+      "technique": [
+        {
+          "id": "T1595",
+          "name": "Active Scanning",
+          "reference": "https://attack.mitre.org/techniques/T1595/"
+        }
+      ]
+    }
+  ],
+  "enabled": true,
+  "language": "kuery",
+  "interval": "30s",
+  "from": "now-90s",
+  "author": [
+    "Grupo 5"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "max_signals": 100
+}

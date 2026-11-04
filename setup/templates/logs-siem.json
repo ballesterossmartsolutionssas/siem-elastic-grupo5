@@ -1,0 +1,41 @@
+{
+  "_meta": { "descripcion": "Data streams del SIEM: logs-siem.auth, .nginx, .syslog, .red y .errores. ECS por los componentes ecs@mappings y logs@mappings." },
+  "index_patterns": ["logs-siem.*-*"],
+  "data_stream": {},
+  "priority": 250,
+  "composed_of": ["logs@mappings", "logs@settings", "ecs@mappings"],
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "siem-30d",
+      "index.number_of_shards": 1,
+      "index.number_of_replicas": 1
+    },
+    "mappings": {
+      "properties": {
+        "source": {
+          "properties": {
+            "ip": { "type": "ip" },
+            "port": { "type": "long" },
+            "geo": { "properties": { "location": { "type": "geo_point" } } }
+          }
+        },
+        "destination": { "properties": { "port": { "type": "long" } } },
+        "http": { "properties": { "response": { "properties": { "status_code": { "type": "long" } } } } },
+        "siem": {
+          "properties": {
+            "fuera_de_horario": { "type": "boolean" },
+            "hora_local": { "type": "integer" },
+            "ruta_sensible": { "type": "boolean" },
+            "sqli": { "type": "boolean" },
+            "herramienta_ataque": { "type": "boolean" }
+          }
+        },
+        "error": {
+          "properties": {
+            "message": { "type": "match_only_text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } }
+          }
+        }
+      }
+    }
+  }
+}

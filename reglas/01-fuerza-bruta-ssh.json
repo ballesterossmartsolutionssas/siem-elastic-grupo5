@@ -1,0 +1,51 @@
+{
+  "rule_id": "siem-g5-fuerza-bruta-ssh",
+  "name": "SIEM - Fuerza bruta SSH",
+  "description": "5 o más intentos fallidos de SSH desde la misma IP en 90 segundos. Playbook: docs/playbooks/fuerza-bruta-ssh.md",
+  "type": "threshold",
+  "index": [
+    "logs-siem.auth-*"
+  ],
+  "query": "event.action : \"ssh_login\" and event.outcome : \"failure\"",
+  "threshold": {
+    "field": [
+      "source.ip"
+    ],
+    "value": 5
+  },
+  "severity": "high",
+  "risk_score": 73,
+  "tags": [
+    "SIEM",
+    "SSH",
+    "Fuerza bruta",
+    "R8.4"
+  ],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0006",
+        "name": "Credential Access",
+        "reference": "https://attack.mitre.org/tactics/TA0006/"
+      },
+      "technique": [
+        {
+          "id": "T1110",
+          "name": "Brute Force",
+          "reference": "https://attack.mitre.org/techniques/T1110/"
+        }
+      ]
+    }
+  ],
+  "enabled": true,
+  "language": "kuery",
+  "interval": "30s",
+  "from": "now-90s",
+  "author": [
+    "Grupo 5"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "max_signals": 100
+}

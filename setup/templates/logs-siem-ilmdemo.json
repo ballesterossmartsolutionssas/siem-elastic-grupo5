@@ -1,0 +1,14 @@
+{
+  "_meta": { "descripcion": "Solo para la prueba acelerada de ILM (scripts/demo-ilm.sh)" },
+  "index_patterns": ["logs-siem.ilmdemo-*"],
+  "data_stream": {},
+  "priority": 300,
+  "composed_of": ["logs@mappings", "logs@settings", "ecs@mappings"],
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "siem-demo",
+      "index.number_of_shards": 1,
+      "index.number_of_replicas": 1
+    }
+  }
+}

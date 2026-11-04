@@ -1,0 +1,43 @@
+# Filebeat solo recolecta. El parseo lo hace Logstash según fields.origen.
+filebeat.inputs:
+  # ---- Víctima (logs reales que escriben sshd, nginx, rsyslog y portguard) ----
+  - type: filestream
+    id: victima-auth
+    paths: ["/logs/victima/auth.log"]
+    fields: { origen: auth }
+
+  - type: filestream
+    id: victima-syslog
+    paths: ["/logs/victima/syslog"]
+    fields: { origen: syslog }
+
+  - type: filestream
+    id: victima-nginx
+    paths: ["/logs/victima/nginx/access.log"]
+    fields: { origen: nginx }
+
+  # ---- Histórico (generadores/historico.py) para tener una semana de datos ----
+  - type: filestream
+    id: historico-auth
+    paths: ["/logs/historico/auth.log"]
+    fields: { origen: auth }
+
+  - type: filestream
+    id: historico-syslog
+    paths: ["/logs/historico/syslog"]
+    fields: { origen: syslog }
+
+  - type: filestream
+    id: historico-nginx
+    paths: ["/logs/historico/access.log"]
+    fields: { origen: nginx }
+
+  # ---- Kubernetes (opcional, cuarta fuente) ----
+  # Ver docs/kubernetes.md: con minikube se monta /var/log/containers y se agrega
+  # aquí un input con fields: { origen: k8s } + un filtro 50-k8s.conf en Logstash.
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+logging.level: info
+logging.metrics.enabled: false

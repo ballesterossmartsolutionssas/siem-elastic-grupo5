@@ -1,0 +1,51 @@
+{
+  "rule_id": "siem-g5-rafaga-404",
+  "name": "SIEM - Ráfaga de 404",
+  "description": "20 o más respuestas 404 a la misma IP en 90 segundos: enumeración de directorios.",
+  "type": "threshold",
+  "index": [
+    "logs-siem.nginx-*"
+  ],
+  "query": "http.response.status_code : 404",
+  "threshold": {
+    "field": [
+      "source.ip"
+    ],
+    "value": 20
+  },
+  "severity": "medium",
+  "risk_score": 47,
+  "tags": [
+    "SIEM",
+    "Web",
+    "Enumeración",
+    "R8.4"
+  ],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0043",
+        "name": "Reconnaissance",
+        "reference": "https://attack.mitre.org/tactics/TA0043/"
+      },
+      "technique": [
+        {
+          "id": "T1595.003",
+          "name": "Wordlist Scanning",
+          "reference": "https://attack.mitre.org/techniques/T1595/003/"
+        }
+      ]
+    }
+  ],
+  "enabled": true,
+  "language": "kuery",
+  "interval": "30s",
+  "from": "now-90s",
+  "author": [
+    "Grupo 5"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "max_signals": 100
+}
