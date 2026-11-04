@@ -41,6 +41,7 @@ volumes:
   es03-data:
   kibana-data:
   logstash-data:
+  filebeat-data:
   victima-logs:
 
 networks:
@@ -198,6 +199,8 @@ services:
       logstash: { condition: service_healthy }
     volumes:
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      # Registro de qué ya se leyó: sin esto, al recrear el contenedor se re-envía todo (duplicados)
+      - filebeat-data:/usr/share/filebeat/data
       - victima-logs:/logs/victima:ro
       - ./datos/historico:/logs/historico:ro
     command: ["filebeat", "-e", "--strict.perms=false"]
