@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIEM Grupo 5 · Centro de operaciones</title>
+<style>
+  :root {
+    --fondo: #0a0e14; --fondo2: #0d1420; --tarjeta: #121a28; --tarjeta2: #16202f;
+    --borde: #223049; --borde2: #2d3f5c; --texto: #e6edf3; --suave: #8699b3; --tenue: #5b6b85;
+    --verde: #3fb950; --amarillo: #d6a514; --naranja: #db7628; --rojo: #f0533f; --azul: #4d9fff; --morado: #b07cff; --cian: #39d3c3;
+    --sombra: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background:
+      radial-gradient(1200px 600px at 80% -10%, #15213a 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, #161b2e 0%, transparent 55%), var(--fondo);
+    color: var(--texto); font: 15px/1.55 "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, rgba(10,14,20,.92), rgba(10,14,20,.78));
+    border-bottom: 1px solid var(--borde); padding: 14px 28px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .escudo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 24px;
+    background: linear-gradient(135deg, #1f6feb, #8957e5); box-shadow: 0 4px 16px rgba(88,101,242,.4); }
+  header h1 { margin: 0; font-size: 19px; letter-spacing: .2px; }
+  header .sub { margin: 1px 0 0; color: var(--suave); font-size: 12.5px; }
+  .barra-der { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .reloj { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+  .reloj small { display: block; font-size: 11px; color: var(--suave); font-weight: 400; letter-spacing: .3px; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 99px;
+    border: 1px solid var(--borde2); background: var(--tarjeta); font-size: 12.5px; font-weight: 600; }
+  .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--tenue); }
+  .punto.vivo { background: var(--verde); box-shadow: 0 0 0 0 rgba(63,185,80,.6); animation: latido 1.8s infinite; }
+  @keyframes latido { 0% { box-shadow: 0 0 0 0 rgba(63,185,80,.5); } 70% { box-shadow: 0 0 0 7px rgba(63,185,80,0); } 100% { box-shadow: 0 0 0 0 rgba(63,185,80,0); } }
+
+  main { padding: 22px 28px 60px; max-width: 1480px; margin: 0 auto; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .13em; color: var(--tenue); margin: 30px 0 13px;
+    display: flex; align-items: center; gap: 10px; }
+  h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--borde), transparent); }
+  .fila { display: grid; gap: 14px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .card { background: linear-gradient(180deg, var(--tarjeta), var(--fondo2)); border: 1px solid var(--borde);
+    border-radius: 14px; padding: 16px 18px; box-shadow: var(--sombra); position: relative; overflow: hidden; }
+  .kpi .e { color: var(--suave); font-size: 12px; display: flex; align-items: center; gap: 7px; }
+  .kpi .v { font-size: 33px; font-weight: 700; margin: 6px 0 2px; line-height: 1; }
+  .kpi .n { color: var(--tenue); font-size: 12px; }
+  .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--azul); opacity: .8; }
+  .kpi.ok::before { background: var(--verde); } .kpi.warn::before { background: var(--amarillo); }
+  .kpi.alert::before { background: var(--rojo); } .kpi.info::before { background: var(--cian); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .chip { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--borde2); }
+  .chip.c { color: #ff9a8f; border-color: #5a1e18; background: #2a1210; }
+  .chip.h { color: #ffb4a3; border-color: #5a2a1a; background: #2a1711; }
+  .chip.m { color: #e9c35a; border-color: #4a3a12; background: #241d08; }
+  .chip.l { color: #74d98a; border-color: #1c4228; background: #0e2516; }
+
+  .grafica { height: 90px; width: 100%; display: block; }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; color: var(--suave); font-size: 12px; margin-top: 4px; }
+  .barfuente { display: grid; grid-template-columns: 70px 1fr 48px; align-items: center; gap: 10px; font-size: 13px; margin: 7px 0; }
+  .barfuente .bg { height: 9px; border-radius: 99px; background: #0a1120; overflow: hidden; }
+  .barfuente .bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--azul), var(--cian)); }
+
+  .links { grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
+  a.link { display: flex; gap: 12px; align-items: center; text-decoration: none; color: var(--texto);
+    background: linear-gradient(180deg, var(--tarjeta), var(--fondo2)); border: 1px solid var(--borde);
+    border-radius: 13px; padding: 14px 16px; transition: .16s; box-shadow: var(--sombra); }
+  a.link:hover { border-color: var(--azul); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(77,159,255,.18); }
+  a.link .ic { font-size: 22px; } a.link b { display: block; font-size: 14.5px; } a.link span { color: var(--suave); font-size: 12px; }
+
+  .ataques { grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); }
+  .ataque { background: linear-gradient(180deg, var(--tarjeta), var(--fondo2)); border: 1px solid var(--borde);
+    border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 9px; box-shadow: var(--sombra); }
+  .ataque h3 { margin: 0; font-size: 15.5px; display: flex; align-items: center; gap: 8px; }
+  .ataque p { margin: 0; color: var(--suave); font-size: 12.5px; flex: 1; }
+  .ataque code { color: var(--morado); font-size: 12px; }
+  button { cursor: pointer; border: 0; border-radius: 9px; padding: 11px 14px; font: inherit; font-weight: 600; font-size: 13.5px;
+    background: linear-gradient(180deg, #e2463f, #c23229); color: #fff; transition: .15s; box-shadow: 0 2px 10px rgba(226,70,63,.25); }
+  button:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  button:disabled { opacity: .45; cursor: wait; }
+  .res { font-size: 12.5px; min-height: 20px; font-weight: 600; }
+  .ok { color: var(--verde); } .esperando { color: var(--amarillo); } .mal { color: var(--rojo); }
+
+  .dos { grid-template-columns: 1.1fr 1fr; align-items: start; }
+  @media (max-width: 980px) { .dos { grid-template-columns: 1fr; } main, header { padding-left: 15px; padding-right: 15px; } }
+  pre { background: #05080e; border: 1px solid var(--borde); border-radius: 13px; padding: 14px; height: 340px; overflow: auto; margin: 0;
+    font: 12px/1.5 Consolas, "Cascadia Code", monospace; color: #9fe8b0; white-space: pre-wrap; box-shadow: var(--sombra); }
+  .tablaWrap { border: 1px solid var(--borde); border-radius: 13px; overflow: hidden; box-shadow: var(--sombra); max-height: 340px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--borde); }
+  th { color: var(--suave); font-weight: 600; background: #0c1320; position: sticky; top: 0; z-index: 1; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr.nueva { animation: resaltar 2.2s ease-out; }
+  @keyframes resaltar { 0% { background: rgba(240,83,63,.22); } 100% { background: transparent; } }
+  .sev { padding: 2px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+  .sev.high, .sev.critical { background: #3a1511; color: #ff8a7a; } .sev.medium { background: #2e2408; color: #e9c35a; } .sev.low { background: #0e2a18; color: #6fd98a; }
+  .mono { font-family: Consolas, monospace; font-size: 12.5px; }
+  .flag { color: var(--suave); }
+  footer { text-align: center; color: var(--tenue); font-size: 12px; margin-top: 36px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="escudo">🛡️</div>
+  <div>
+    <h1>SIEM con Elastic Stack · Centro de operaciones</h1>
+    <p class="sub">Proyecto 8 · Computación en la Nube · Grupo 5: Valentina Velastegui · Juan Camilo Ballesteros · Juan Miguel Carabali</p>
+  </div>
+  <div class="barra-der">
+    <span class="pill"><span class="punto" id="conPunto"></span><span id="conTexto">conectando…</span></span>
+    <div class="reloj num"><span id="reloj">--:--:--</span><small id="fecha">—</small></div>
+  </div>
+</header>
+
+<main>
+  <h2>Estado de la plataforma · en vivo</h2>
+  <div class="fila kpis">
+    <div class="card kpi ok" id="kCluster"><div class="e">🟢 Clúster Elasticsearch</div><div class="v" id="cluster">…</div><div class="n" id="nodos"></div></div>
+    <div class="card kpi info"><div class="e">📈 Eventos analizados</div><div class="v num" id="eventos">…</div><div class="n">auth · nginx · syslog · red</div></div>
+    <div class="card kpi ok"><div class="e">✅ Logs parseados bien · R8.3</div><div class="v num" id="parseo">…</div><div class="n" id="rechazados"></div></div>
+    <div class="card kpi alert"><div class="e">🚨 Alertas de hoy · R8.4</div><div class="v num" id="alertasHoy">…</div>
+      <div class="chips" id="severidades"></div></div>
+  </div>
+
+  <div class="fila dos" style="margin-top:14px">
+    <div class="card">
+      <div class="e" style="color:var(--suave);font-size:12px;margin-bottom:6px">⏱️ Eventos por minuto · últimos 30 min</div>
+      <svg class="grafica" id="grafica" viewBox="0 0 600 90" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="card">
+      <div class="e" style="color:var(--suave);font-size:12px;margin-bottom:8px">🗂️ Eventos por fuente · R8.2</div>
+      <div id="fuentes"></div>
+    </div>
+  </div>
+
+  <h2>Navegar los tableros interactivos · Kibana</h2>
+  <div class="fila links">
+    <a class="link" target="_blank" href="http://localhost:5601/app/dashboards#/view/siem-dashboard-ejecutivo"><span class="ic">📊</span><span><b>Dashboard ejecutivo</b><span>R8.6 · mapa, top amenazas, tendencia</span></span></a>
+    <a class="link" target="_blank" href="http://localhost:5601/app/dashboards#/view/siem-dashboard-operacional"><span class="ic">🔎</span><span><b>Dashboard operacional</b><span>R8.7 · investigar por IP (drill-down)</span></span></a>
+    <a class="link" target="_blank" href="http://localhost:5601/app/security/alerts"><span class="ic">🚨</span><span><b>Alertas</b><span>Kibana Security</span></span></a>
+    <a class="link" target="_blank" href="http://localhost:5601/app/security/rules"><span class="ic">📐</span><span><b>Reglas de detección</b><span>R8.4 · las 6 reglas</span></span></a>
+    <a class="link" target="_blank" href="http://localhost:5601/app/discover"><span class="ic">📜</span><span><b>Logs (Discover)</b><span>R8.2 · eventos en ECS</span></span></a>
+    <a class="link" target="_blank" href="http://localhost:5601/app/management/data/index_lifecycle_management/policies/edit/siem-30d"><span class="ic">🗄️</span><span><b>Política ILM</b><span>R8.1 · retención de 30 días</span></span></a>
+    <a class="link" target="_blank" href="https://github.com/ballesterossmartsolutionssas/siem-elastic-grupo5/tree/main/docs/playbooks"><span class="ic">📘</span><span><b>Playbooks</b><span>R8.8 · respuesta a incidentes</span></span></a>
+    <a class="link" target="_blank" href="https://github.com/ballesterossmartsolutionssas/siem-elastic-grupo5"><span class="ic">💻</span><span><b>Repositorio</b><span>código y guía paso a paso</span></span></a>
+  </div>
+
+  <h2>Simular ataques reales contra el servidor víctima · R8.5</h2>
+  <div class="fila ataques">
+    <div class="ataque"><h3>🛰️ Escaneo de puertos</h3><p><code>nmap -sT</code> contra la víctima. Se detecta con los puertos señuelo.</p>
+      <button data-a="escaneo" data-r="SIEM - Escaneo de puertos">Lanzar escaneo</button><div class="res" id="r-escaneo"></div></div>
+    <div class="ataque"><h3>🔑 Fuerza bruta SSH</h3><p><code>hydra</code> con un diccionario contra <code>root</code> y <code>admin</code>. La clave de admin está en la lista.</p>
+      <button data-a="fuerza-bruta" data-r="SIEM - Fuerza bruta SSH">Lanzar fuerza bruta</button><div class="res" id="r-fuerza-bruta"></div></div>
+    <div class="ataque"><h3>💉 Inyección SQL</h3><p><code>sqlmap</code> y <code>curl</code> con payloads, desde una IP de Alemania (vía X-Forwarded-For).</p>
+      <button data-a="sqli" data-r="SIEM - Inyección SQL">Lanzar inyección SQL</button><div class="res" id="r-sqli"></div></div>
+    <div class="ataque"><h3>📂 Rutas sensibles + 404</h3><p>Pide <code>/.env</code>, <code>/.git</code>, <code>/admin</code>… y 40 páginas inexistentes.</p>
+      <button data-a="rutas" data-r="SIEM - Acceso a rutas sensibles">Lanzar reconocimiento</button><div class="res" id="r-rutas"></div></div>
+  </div>
+
+  <div class="fila dos" style="margin-top:16px">
+    <div><h2 style="margin-top:6px">Consola del ataque</h2><pre id="salida">Elige un ataque arriba para verlo correr aquí en vivo.</pre></div>
+    <div><h2 style="margin-top:6px">Alertas recientes · se actualiza solo</h2>
+      <div class="tablaWrap"><table><thead><tr><th>Hora</th><th>Regla</th><th>Sev.</th><th>IP origen</th></tr></thead>
+      <tbody id="alertas"><tr><td colspan="4" style="color:var(--tenue)">Cargando…</td></tr></tbody></table></div>
+      <h2>Top IPs atacantes · 24 h</h2>
+      <div class="tablaWrap"><table><thead><tr><th>IP</th><th>País</th><th style="text-align:right">Eventos</th></tr></thead>
+      <tbody id="topips"><tr><td colspan="3" style="color:var(--tenue)">Cargando…</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <footer>SIEM Grupo 5 · Elastic Stack 8.19 · Docker Compose · Las herramientas de ataque solo apuntan al contenedor de laboratorio.</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const hora = (iso) => new Date(iso).toLocaleTimeString("es-CO");
+const esc = (s) => String(s ?? "—").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const nf = (n) => Number(n).toLocaleString("es-CO");
+let vistas = new Set();
+
+function reloj() {
+  const d = new Date();
+  $("reloj").textContent = d.toLocaleTimeString("es-CO");
+  $("fecha").textContent = d.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function conexion(ok) {
+  $("conPunto").className = "punto" + (ok ? " vivo" : "");
+  $("conTexto").textContent = ok ? "conectado · en vivo" : "sin conexión";
+}
+
+function grafica(serie) {
+  const w = 600, h = 90, n = serie.length;
+  if (!n) return;
+  const max = Math.max(1, ...serie);
+  const bw = w / n;
+  let barras = "", linea = "";
+  serie.forEach((v, i) => {
+    const bh = (v / max) * (h - 14);
+    const x = i * bw, y = h - bh;
+    barras += `<rect x="${x + 1}" y="${y}" width="${bw - 2}" height="${bh}" rx="2" fill="url(#g)"></rect>`;
+    linea += `${i ? "L" : "M"}${(x + bw / 2).toFixed(1)},${(y).toFixed(1)} `;
+  });
+  $("grafica").innerHTML =
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0" stop-color="#4d9fff"/><stop offset="1" stop-color="#39d3c3" stop-opacity=".35"/></linearGradient></defs>
+     ${barras}<path d="${linea}" fill="none" stroke="#7fc6ff" stroke-width="1.5" opacity=".5"/>`;
+}
+
+function fuentes(lista) {
+  const max = Math.max(1, ...lista.map((x) => x.n));
+  $("fuentes").innerHTML = lista.map((f) =>
+    `<div class="barfuente"><span style="color:var(--suave)">${esc(f.nombre)}</span>
+       <span class="bg"><span class="bar" style="width:${(f.n / max * 100).toFixed(1)}%"></span></span>
+       <span class="num" style="text-align:right;color:var(--suave)">${nf(f.n)}</span></div>`).join("") || "<span style='color:var(--tenue)'>Sin datos aún</span>";
+}
+
+function pintarAlertas(a) {
+  $("alertas").innerHTML = a.length ? a.map((x) => {
+    const id = x.hora + x.regla + x.ip, nueva = !vistas.has(id);
+    return `<tr class="${nueva ? "nueva" : ""}"><td class="num">${hora(x.hora)}</td><td>${esc(x.regla)}</td>
+      <td><span class="sev ${esc(x.severidad)}">${esc(x.severidad)}</span></td><td class="mono">${esc(x.ip)}</td></tr>`;
+  }).join("") : `<tr><td colspan="4" style="color:var(--tenue)">Sin alertas en las últimas 24 h</td></tr>`;
+  a.forEach((x) => vistas.add(x.hora + x.regla + x.ip));
+}
+
+async function refrescar() {
+  try {
+    const r = await (await fetch("/api/resumen")).json();
+    conexion(r.cluster === "green" || r.eventos > 0);
+    const verde = r.cluster === "green";
+    $("cluster").innerHTML = verde ? "🟢 Verde" : esc(r.cluster);
+    $("kCluster").className = "card kpi " + (verde ? "ok" : "warn");
+    $("nodos").textContent = `${r.nodos} nodos activos`;
+    $("eventos").textContent = nf(r.eventos);
+    $("parseo").textContent = nf(r.parseo) + " %";
+    $("rechazados").textContent = `${nf(r.rechazados)} al índice de errores`;
+    $("alertasHoy").textContent = nf(r.alertas_hoy);
+    const s = r.severidades || {};
+    $("severidades").innerHTML =
+      `<span class="chip c">crít ${s.critical || 0}</span><span class="chip h">alta ${s.high || 0}</span>
+       <span class="chip m">media ${s.medium || 0}</span><span class="chip l">baja ${s.low || 0}</span>`;
+    grafica(r.serie || []);
+    fuentes(r.fuentes || []);
+    pintarAlertas(r.alertas || []);
+    $("topips").innerHTML = (r.top_ips || []).length ? r.top_ips.map((x) =>
+      `<tr><td class="mono">${esc(x.ip)}</td><td class="flag">${esc(x.pais)}</td><td class="num" style="text-align:right">${nf(x.n)}</td></tr>`).join("")
+      : `<tr><td colspan="3" style="color:var(--tenue)">Sin IPs externas aún</td></tr>`;
+  } catch { conexion(false); }
+}
+
+async function atacar(boton) {
+  const nombre = boton.dataset.a, regla = boton.dataset.r, res = $("r-" + nombre);
+  document.querySelectorAll("button[data-a]").forEach((b) => (b.disabled = true));
+  res.innerHTML = `<span class="esperando">⏳ lanzando…</span>`;
+  const { id } = await (await fetch("/api/ataque/" + nombre, { method: "POST" })).json();
+  const t0 = Date.now();
+  let terminado = false, alerta = null, inicio = null;
+  while (!(terminado && alerta) && Date.now() - t0 < 180000) {
+    const t = await (await fetch("/api/trabajo/" + id)).json();
+    inicio = t.inicio; terminado = t.terminado;
+    $("salida").textContent = (t.salida || []).join("\n") || "Arrancando…";
+    $("salida").scrollTop = 1e9;
+    if (!alerta) {
+      const a = await (await fetch("/api/alertas?desde=" + encodeURIComponent(inicio))).json();
+      alerta = a.find((x) => x.regla === regla);
+    }
+    const seg = Math.round((Date.now() - t0) / 1000);
+    res.innerHTML = alerta
+      ? `<span class="ok">✔ Alerta «${esc(regla)}» en ${Math.round((new Date(alerta.hora) - new Date(inicio)) / 1000)} s</span>`
+      : `<span class="esperando">⏳ ${terminado ? "ataque terminado, esperando la alerta" : "atacando"}… ${seg} s</span>`;
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  if (!alerta) res.innerHTML = `<span class="mal">no llegó la alerta en 3 min</span>`;
+  document.querySelectorAll("button[data-a]").forEach((b) => (b.disabled = false));
+  refrescar();
+}
+
+document.querySelectorAll("button[data-a]").forEach((b) => b.addEventListener("click", () => atacar(b)));
+reloj(); setInterval(reloj, 1000);
+refrescar(); setInterval(refrescar, 4000);
+</script>
+</body>
+</html>

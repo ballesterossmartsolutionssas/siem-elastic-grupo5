@@ -232,6 +232,24 @@ services:
     command: ["normal"]
 
   # ---------------------------------------------------------------------------
+  # panel: centro de control web (http://localhost:8090). Estado en vivo,
+  # enlaces a Kibana y botones que lanzan los ataques y miden la alerta.
+  # ---------------------------------------------------------------------------
+  panel:
+    build: ./atacante
+    networks: [siem]
+    depends_on:
+      victima: { condition: service_started }
+      setup: { condition: service_completed_successfully }
+    ports: ["8090:8090"]
+    volumes:
+      - certs:/certs:ro
+      - ./panel:/panel:ro
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    entrypoint: ["python3", "-u", "/panel/servidor.py"]
+
+  # ---------------------------------------------------------------------------
   # atacante: nmap, hydra, sqlmap y curl. Solo corre a pedido:
   #   docker compose run --rm atacante fuerza-bruta | escaneo | sqli | rutas | todo
   # ---------------------------------------------------------------------------

@@ -86,7 +86,19 @@ docker compose ps
 docker compose logs -f setup kibana-setup
 ```
 
-### 4. Entrar a Kibana
+### 4. Centro de operaciones (la pantalla principal)
+
+**<http://localhost:8090>** — un panel web propio desde donde se maneja todo sin tocar la terminal:
+
+- estado de la plataforma en vivo (clúster, eventos, tasa de parseo, alertas y severidades de hoy);
+- gráfica de eventos por minuto y eventos por fuente;
+- enlaces a todos los tableros de Kibana;
+- **botones para lanzar los 4 ataques**, con la consola del ataque y el tiempo hasta la alerta;
+- feed de alertas recientes y top de IPs atacantes.
+
+Es la forma recomendada de mostrar el proyecto. Kibana queda un clic más adentro para el detalle.
+
+### 4b. Entrar a Kibana
 
 <http://localhost:5601>: usuario `elastic` y la contraseña `ELASTIC_PASSWORD` del `.env`.
 
