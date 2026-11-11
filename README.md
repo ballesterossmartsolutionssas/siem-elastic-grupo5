@@ -145,6 +145,14 @@ bash scripts/demo-ilm.sh
 
 Tarda unos 8 minutos. Muestra cómo los índices de `logs-siem.ilmdemo` pasan de hot a warm y a cold.
 
+### 8b. Demo de la sustentación
+
+Recorre los requisitos en orden (stack, verificación, dashboard ejecutivo, ataque en vivo, dashboard operacional, reglas, ILM y playbook), con una pausa entre cada paso:
+
+```bash
+bash scripts/demo.sh
+```
+
 ### 9. Apagar
 
 ```bash

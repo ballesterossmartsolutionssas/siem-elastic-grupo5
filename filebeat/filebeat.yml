@@ -5,32 +5,56 @@ filebeat.inputs:
     id: victima-auth
     paths: ["/logs/victima/auth.log"]
     fields: { origen: auth }
+    # Identificar el archivo por su contenido, no por el inode: en Docker Desktop (Windows)
+    # el inode cambia al reiniciar y Filebeat volvía a leer todo (duplicados).
+    prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
+    file_identity.fingerprint: ~
 
   - type: filestream
     id: victima-syslog
     paths: ["/logs/victima/syslog"]
     fields: { origen: syslog }
+    # Identificar el archivo por su contenido, no por el inode: en Docker Desktop (Windows)
+    # el inode cambia al reiniciar y Filebeat volvía a leer todo (duplicados).
+    prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
+    file_identity.fingerprint: ~
 
   - type: filestream
     id: victima-nginx
     paths: ["/logs/victima/nginx/access.log"]
     fields: { origen: nginx }
+    # Identificar el archivo por su contenido, no por el inode: en Docker Desktop (Windows)
+    # el inode cambia al reiniciar y Filebeat volvía a leer todo (duplicados).
+    prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
+    file_identity.fingerprint: ~
 
   # ---- Histórico (generadores/historico.py) para tener una semana de datos ----
   - type: filestream
     id: historico-auth
     paths: ["/logs/historico/auth.log"]
     fields: { origen: auth }
+    # Identificar el archivo por su contenido, no por el inode: en Docker Desktop (Windows)
+    # el inode cambia al reiniciar y Filebeat volvía a leer todo (duplicados).
+    prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
+    file_identity.fingerprint: ~
 
   - type: filestream
     id: historico-syslog
     paths: ["/logs/historico/syslog"]
     fields: { origen: syslog }
+    # Identificar el archivo por su contenido, no por el inode: en Docker Desktop (Windows)
+    # el inode cambia al reiniciar y Filebeat volvía a leer todo (duplicados).
+    prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
+    file_identity.fingerprint: ~
 
   - type: filestream
     id: historico-nginx
     paths: ["/logs/historico/access.log"]
     fields: { origen: nginx }
+    # Identificar el archivo por su contenido, no por el inode: en Docker Desktop (Windows)
+    # el inode cambia al reiniciar y Filebeat volvía a leer todo (duplicados).
+    prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
+    file_identity.fingerprint: ~
 
   # ---- Kubernetes (opcional, cuarta fuente) ----
   # Ver docs/kubernetes.md: con minikube se monta /var/log/containers y se agrega
