@@ -113,20 +113,80 @@ def alertas(desde):
         salida = []
         for h in r["hits"]["hits"]:
             s = h["_source"]
-            g = lambda plano, *ruta: s.get(plano) or _anidado(s, ruta)  # noqa: E731
             salida.append({"hora": s["@timestamp"],
-                           "regla": g("kibana.alert.rule.name", "kibana", "alert", "rule", "name"),
-                           "severidad": g("kibana.alert.severity", "kibana", "alert", "severity"),
-                           "ip": g("source.ip", "source", "ip"),
-                           "usuario": g("user.name", "user", "name")})
+                           "regla": campo(s, "kibana.alert.rule.name", "kibana", "alert", "rule", "name"),
+                           "severidad": campo(s, "kibana.alert.severity", "kibana", "alert", "severity"),
+                           "ip": campo(s, "source.ip", "source", "ip"),
+                           "usuario": campo(s, "user.name", "user", "name")})
         return salida
     return intenta(q, [])
 
 
-def _anidado(d, ruta):
+def logs(desde):
+    """Stream de eventos ya parseados, el más reciente primero (tail -f del SIEM)."""
+    def q():
+        r = es("/logs-siem.*/_search", {"size": 45, "sort": [{"@timestamp": "desc"}],
+               "_source": ["@timestamp", "data_stream.dataset", "source.ip", "source.geo.country_name",
+                           "event.action", "event.outcome", "http.response.status_code",
+                           "url.original", "message", "user.name", "tags"],
+               "query": {"range": {"@timestamp": {"gte": desde}}}})
+        out = []
+        for h in r["hits"]["hits"]:
+            s = h["_source"]
+            tags = campo(s, "tags") or []
+            out.append({
+                "hora": s["@timestamp"],
+                "fuente": (campo(s, "data_stream.dataset", "data_stream", "dataset") or "").replace("siem.", ""),
+                "ip": campo(s, "source.ip", "source", "ip"),
+                "pais": campo(s, "source.geo.country_name", "source", "geo", "country_name"),
+                "accion": campo(s, "event.action", "event", "action"),
+                "outcome": campo(s, "event.outcome", "event", "outcome"),
+                "codigo": campo(s, "http.response.status_code", "http", "response", "status_code"),
+                "usuario": campo(s, "user.name", "user", "name"),
+                "url": campo(s, "url.original", "url", "original"),
+                "msg": (campo(s, "message") or ""),
+                "interna": "red_interna" in tags if isinstance(tags, list) else False,
+            })
+        return out
+    return intenta(q, [])
+
+
+def investigar_ip(ip):
+    """Qué hizo una IP en 24 h: eventos, país, acciones y qué reglas disparó."""
+    def q():
+        base = {"bool": {"filter": [{"term": {"source.ip": ip}}, {"range": {"@timestamp": {"gte": "now-24h"}}}]}}
+        agg = es("/logs-siem.*/_search", {"size": 0, "query": base, "aggs": {
+            "acciones": {"terms": {"field": "event.action", "size": 8}},
+            "fuentes": {"terms": {"field": "data_stream.dataset", "size": 6}},
+            "pais": {"terms": {"field": "source.geo.country_name", "size": 1}},
+            "primero": {"min": {"field": "@timestamp"}},
+            "ultimo": {"max": {"field": "@timestamp"}},
+        }})
+        a = agg["aggregations"]
+        total = agg["hits"]["total"]["value"]
+        reglas = es(f"/{ALERTAS}/_search", {"size": 0,
+                    "query": {"bool": {"filter": [{"term": {"source.ip": ip}},
+                                                  {"range": {"@timestamp": {"gte": "now-24h"}}}]}},
+                    "aggs": {"r": {"terms": {"field": "kibana.alert.rule.name", "size": 10}}}})
+        return {
+            "ip": ip, "total": total,
+            "pais": a["pais"]["buckets"][0]["key"] if a["pais"]["buckets"] else None,
+            "primero": a["primero"].get("value_as_string"), "ultimo": a["ultimo"].get("value_as_string"),
+            "acciones": [{"k": x["key"], "n": x["doc_count"]} for x in a["acciones"]["buckets"]],
+            "fuentes": [{"k": x["key"].replace("siem.", ""), "n": x["doc_count"]} for x in a["fuentes"]["buckets"]],
+            "reglas": [{"k": x["key"], "n": x["doc_count"]} for x in reglas["aggregations"]["r"]["buckets"]],
+        }
+    return intenta(q, {"ip": ip, "total": 0, "acciones": [], "fuentes": [], "reglas": []})
+
+
+def campo(s, plano, *ruta):
+    """Lee un campo de _source esté aplanado ("a.b.c") o anidado ({a:{b:{c}}})."""
+    if plano in s and s[plano] not in (None, ""):
+        return s[plano]
+    d = s
     for k in ruta:
         d = d.get(k, {}) if isinstance(d, dict) else {}
-    return d or None
+    return d if d not in ({}, "") else None
 
 
 def lanzar(nombre):
@@ -171,6 +231,11 @@ class Manejador(BaseHTTPRequestHandler):
             if self.path.startswith("/api/alertas"):
                 desde = self.path.split("desde=", 1)[1] if "desde=" in self.path else "now-1h"
                 return self.responder(200, alertas(urllib.request.unquote(desde)))
+            if self.path.startswith("/api/logs"):
+                desde = self.path.split("desde=", 1)[1] if "desde=" in self.path else "now-30m"
+                return self.responder(200, logs(urllib.request.unquote(desde)))
+            if self.path.startswith("/api/ip/"):
+                return self.responder(200, investigar_ip(urllib.request.unquote(self.path.rsplit("/", 1)[1])))
             if self.path.startswith("/api/trabajo/"):
                 t = TRABAJOS.get(self.path.rsplit("/", 1)[1])
                 return self.responder(200 if t else 404, t or {"error": "no existe"})
