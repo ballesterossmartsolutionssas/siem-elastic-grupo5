@@ -462,17 +462,14 @@ def main():
     # ---------------------------------------------------------------- unir las escenas
     print("== Uniendo", len(escenas), "escenas con ffmpeg")
     lista = trabajo / "lista.txt"
-    partes = []
-    for i, v in enumerate(escenas):
-        mp4 = trabajo / f"escena-{i:02d}.mp4"
-        subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(v), "-vf", "fps=30,format=yuv420p",
-                        "-c:v", "libx264", "-preset", "veryfast", "-crf", "26", "-an", str(mp4)], check=True)
-        partes.append(mp4)
-    lista.write_text("".join(f"file '{p.as_posix()}'\n" for p in partes), encoding="utf-8")
+    # Una sola codificación, a los 25 fps nativos de Playwright (pasar a 30 duplicaba cuadros y el
+    # movimiento saltaba), saltando el primer instante de cada escena (un cuadro en blanco al cargar).
+    lista.write_text("".join(f"file '{Path(v).as_posix()}'\ninpoint 0.4\n" for v in escenas), encoding="utf-8")
     salida = Path(args.salida)
     salida.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista),
-                    "-c", "copy", "-movflags", "+faststart", str(salida)], check=True)
+                    "-vf", "fps=25,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "25",
+                    "-tune", "stillimage", "-g", "50", "-an", "-movflags", "+faststart", str(salida)], check=True)
     print("Listo:", salida, f"({salida.stat().st_size / 1e6:.1f} MB)")
 
 
