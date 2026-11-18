@@ -544,8 +544,8 @@ def main():
     salida = Path(args.salida)
     salida.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista),
-                    "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "20",
-                    "-tune", "stillimage", "-g", "60", "-an", "-movflags", "+faststart", str(salida)], check=True)
+                    "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "veryslow", "-crf", "27",
+                    "-tune", "stillimage", "-g", "150", "-an", "-movflags", "+faststart", str(salida)], check=True)
     print("Listo:", salida, f"({salida.stat().st_size / 1e6:.1f} MB)")
 
 
