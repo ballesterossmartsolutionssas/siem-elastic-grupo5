@@ -92,3 +92,14 @@ Se siguió el playbook paso a paso sobre el ataque de la corrida final ([resulta
 | 5. Contención (simulada) | `ufw deny from 192.168.80.11`, `pkill -KILL -u admin` y `passwd -l admin` | ≈ 2 min |
 
 Tiempo total del triage: unos 3 minutos, dentro del objetivo de 5. La alerta crítica nueva ahorra el paso de mirar la tabla de usuarios para saber si entró.
+
+## 7. Prueba cruzada (18 nov 2026, R8.8)
+
+El criterio de R8.8 pide que el playbook lo siga un integrante que no participó en su creación. Se hizo con la **investigación guiada del panel**, en videollamada por Google Meet, con la pantalla del PC de Camilo compartida (el grupo usa un solo stack). Quedó registrado en el índice `siem-investigaciones`:
+
+| Analista | IP | Clasificación | Pasos del triage | Contención | Duración |
+| --- | --- | --- | --- | --- | --- |
+| Valentina Velastegui | 192.168.80.2 | Crítica | 4/4 | IP bloqueada, sesiones de admin cerradas, cuenta bloqueada y alertas reconocidas | **1:41** |
+| Juan Miguel Carabali | 192.168.80.2 | Crítica | 4/4 | IP bloqueada, sesiones de admin cerradas, cuenta bloqueada y alertas reconocidas | **0:45** |
+
+Las dos quedaron por debajo de los 5 minutos que pide R8.7. En el panel, R8.7 y R8.8 pasaron a verde.
