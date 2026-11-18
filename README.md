@@ -6,6 +6,10 @@ Proyecto 8 de Computación en la Nube (541201, 2026-2S): plataforma de análisis
 
 Un SIEM sencillo y reproducible con un solo comando. Un servidor **víctima** genera logs reales (SSH, web y puertos). Un contenedor **atacante** lo ataca con nmap, hydra y sqlmap. Elastic Stack centraliza y normaliza los logs, detecta los ataques y los muestra en dashboards.
 
+## Demo en video
+
+Recorrido de 5 minutos, sin audio y con subtítulos que explican cada parte: el stack, el panel con R8.1-R8.8, un ataque real con sus alertas, la investigación guiada, los dashboards, el índice de errores, Kubernetes y el ILM. Archivo: [diapositivas/demo-SIEM-Grupo5.mp4](diapositivas/demo-SIEM-Grupo5.mp4).
+
 ## Arquitectura
 
 ```text
