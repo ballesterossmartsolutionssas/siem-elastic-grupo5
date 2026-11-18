@@ -1,5 +1,7 @@
 # Guion de la sustentación
 
+> **Versión vigente: [guion-sustentacion.pdf](guion-sustentacion.pdf).** El profesor pidió 15 minutos de diapositivas y la demo en video al final. El reparto quedó así: Valentina hace las diapositivas 1-4, 13 y 14; Miguel, la 6, 7, 8 y 15; Camilo, la 5, 9-12, 16, 17 y el video. Lo que sigue es la versión anterior, como referencia.
+
 **Miércoles 18 nov 2026.** Máximo 20 minutos. La nota es 70 % presentación y demo y 30 % guía y repo.
 
 - Diapositivas: [SIEM-Grupo5.pptx](SIEM-Grupo5.pptx), también en [PDF](SIEM-Grupo5.pdf). Las notas de cada diapositiva dicen quién habla y qué decir.
