@@ -1,0 +1,111 @@
+# Filebeat como DaemonSet: lee los logs de los contenedores de cada nodo (/var/log/containers),
+# les agrega los metadatos de Kubernetes (namespace, pod, contenedor, etiquetas) y los manda
+# al mismo Logstash del SIEM con fields.origen = k8s.
+# LOGSTASH_IP la reemplaza scripts/kubernetes.sh con la IP del contenedor de Logstash.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+  - apiGroups: [""]
+    resources: [namespaces, pods, nodes]
+    verbs: [get, watch, list]
+  - apiGroups: [apps]
+    resources: [replicasets]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: kube-system
+data:
+  filebeat.yml: |
+    filebeat.inputs:
+      - type: filestream
+        id: k8s-contenedores
+        paths: ["/var/log/containers/*.log"]
+        prospector.scanner.symlinks: true
+        parsers:
+          - container: ~
+        fields: { origen: k8s }
+        processors:
+          - add_kubernetes_metadata:
+              host: ${NODE_NAME}
+              matchers:
+                - logs_path:
+                    logs_path: "/var/log/containers/"
+          # Solo la app de ejemplo y el sistema: así no entra el ruido del propio Filebeat
+          - drop_event:
+              when:
+                not:
+                  or:
+                    - equals: { kubernetes.namespace: tienda }
+                    - equals: { kubernetes.namespace: kube-system }
+          - drop_event:
+              when:
+                equals: { kubernetes.container.name: filebeat }
+    output.logstash:
+      hosts: ["logstash:5044"]
+    logging.level: warning
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+  namespace: kube-system
+  labels: { app: filebeat }
+spec:
+  selector:
+    matchLabels: { app: filebeat }
+  template:
+    metadata:
+      labels: { app: filebeat }
+    spec:
+      serviceAccountName: filebeat
+      hostAliases:
+        - ip: "LOGSTASH_IP"
+          hostnames: ["logstash"]
+      containers:
+        - name: filebeat
+          image: docker.elastic.co/beats/filebeat:8.19.23
+          imagePullPolicy: IfNotPresent
+          args: ["-c", "/etc/filebeat.yml", "-e"]
+          env:
+            - name: NODE_NAME
+              valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+          securityContext:
+            runAsUser: 0
+          resources:
+            limits: { memory: 200Mi }
+            requests: { cpu: 50m, memory: 100Mi }
+          volumeMounts:
+            - { name: config, mountPath: /etc/filebeat.yml, subPath: filebeat.yml, readOnly: true }
+            - { name: data, mountPath: /usr/share/filebeat/data }
+            - { name: varlog, mountPath: /var/log, readOnly: true }
+      volumes:
+        - name: config
+          configMap: { name: filebeat-config, defaultMode: 0640 }
+        - name: varlog
+          hostPath: { path: /var/log }
+        - name: data
+          hostPath: { path: /var/lib/filebeat-data, type: DirectoryOrCreate }

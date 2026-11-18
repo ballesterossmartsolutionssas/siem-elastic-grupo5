@@ -40,7 +40,9 @@ Un SIEM sencillo y reproducible con un solo comando. Un servidor **víctima** ge
 
 - Docker Desktop (Windows o Mac) o Docker Engine (Linux), con Compose v2.
 - 16 GB de RAM o más (el stack usa unos 8 GB) y 20 GB libres en disco.
-- Python 3.10 o más, solo para el generador histórico.
+- Python 3.10 o más, para el generador histórico (y Playwright para las capturas y el video).
+- Para la cuarta fuente: [k3d](https://k3d.io) y `kubectl` (Docker Desktop ya trae kubectl). k3s pide alrededor de 1 GB más de RAM.
+- Para grabar la demo: `ffmpeg`.
 
 ## Paso a paso
 
@@ -160,15 +162,31 @@ docker compose run --rm --no-deps kibana-setup
 bash scripts/demo-ilm.sh
 ```
 
-Tarda unos 8 minutos. Muestra cómo los índices de `logs-siem.ilmdemo` pasan de hot a warm y a cold.
+Tarda unos 8 minutos. Muestra cómo los índices de `logs-siem.ilmdemo` pasan de hot a warm y a cold. La política `siem-demo` los borra a los 30 minutos.
 
-### 8b. Demo de la sustentación
-
-Recorre los requisitos en orden (stack, verificación, dashboard ejecutivo, ataque en vivo, dashboard operacional, reglas, ILM y playbook), con una pausa entre cada paso:
+### 8a. Cuarta fuente: logs de Kubernetes (R8.2)
 
 ```bash
-bash scripts/demo.sh
+bash scripts/kubernetes.sh crear     # k3s con k3d, app de ejemplo y Filebeat como DaemonSet
+bash scripts/kubernetes.sh estado    # pods y eventos de k8s que ya llegaron al SIEM
 ```
+
+Crea un clúster k3s dentro de la red de Docker del SIEM. Despliega una app de ejemplo en el namespace `tienda` (nginx y un generador de tráfico) y un Filebeat como DaemonSet que manda los logs de los pods, con sus metadatos, al mismo Logstash. Llegan a `logs-siem.k8s-default`. Detalles en [docs/kubernetes.md](docs/kubernetes.md).
+
+### 8b. Demo de la sustentación (video)
+
+La demo se presenta grabada, sin audio y con subtítulos que explican cada parte. El video lo hace un script, siempre igual:
+
+1. lanza el ataque real desde el panel y espera las alertas;
+2. hace la investigación guiada;
+3. recorre Kibana, el índice de errores, Kubernetes y el ILM acelerado;
+4. une las escenas con ffmpeg.
+
+```bash
+python scripts/grabar-demo.py      # deja diapositivas/demo-SIEM-Grupo5.mp4 (~12 min)
+```
+
+Para recorrer lo mismo a mano, en la terminal y con pausas: `bash scripts/demo.sh`.
 
 ### 8c. Capturas de evidencia
 
@@ -178,7 +196,16 @@ Con el stack arriba y Playwright instalado (`pip install playwright` y `playwrig
 python scripts/capturas.py
 ```
 
-Guarda en `docs/evidencias/` el panel, los dos dashboards (el operacional filtrado por la IP atacante), las reglas, las alertas y el ILM.
+Guarda en `docs/evidencias/`:
+
+- el panel;
+- los dos dashboards (el operacional, filtrado por la IP atacante);
+- las reglas y las alertas;
+- el índice de errores;
+- los logs de Kubernetes;
+- las políticas ILM y la prueba acelerada en warm y cold.
+
+Antes hay que correr `bash scripts/demo-ilm.sh`.
 
 ### 9. Apagar
 
@@ -194,11 +221,11 @@ Resultados de la corrida final, con capturas: [docs/evidencias/resultados-2026-1
 | ID | Qué se hizo | Dónde | Resultado |
 | --- | --- | --- | --- |
 | R8.1 | 3 nodos con TLS; ILM `siem-30d` (borra a los 30 días) y `siem-demo` acelerada | `docker-compose.yml`, `setup/ilm/`, `scripts/demo-ilm.sh` | Clúster green; índices en warm y cold en 8 min |
-| R8.2 | auth.log, syslog y nginx reales en la víctima, más puertos señuelo; ECS por `ecs@mappings` | `victima/`, `filebeat/filebeat.yml`, `setup/templates/` | 4 fuentes visibles en Kibana |
+| R8.2 | auth.log, syslog y nginx reales en la víctima, logs de **Kubernetes** (k3s, Filebeat DaemonSet) y puertos señuelo; ECS por `ecs@mappings` | `victima/`, `filebeat/`, `kubernetes/`, `setup/templates/` | Las 4 fuentes del enunciado visibles en Kibana |
 | R8.3 | grok, date, mutate, geoip, cidr y urldecode; los malformados van a `logs-siem.errores` con `error.message` | `logstash/pipeline/` | 99,16 % parseado |
 | R8.4 | 5 reglas pedidas, más inyección SQL, una de correlación EQL (fuerza bruta seguida de ingreso = cuenta comprometida) y una de anomalía *new terms* (usuario que entra desde una IP nunca vista en 7 días) | `reglas/` | Las 8 disparan |
 | R8.5 | Ataques reales: nmap, hydra, sqlmap y curl | `atacante/`, `scripts/atacar-y-medir.sh` | Alertas en 13 a 28 s (la correlación, en 52 s) |
-| R8.6 | Dashboard ejecutivo con mapa, tendencia y salud | `kibana/construir_dashboards.py` | Listo |
+| R8.6 | Dashboard ejecutivo con mapa, tendencia y salud; se actualiza solo cada minuto | `kibana/construir_dashboards.py` | Evaluación con personas no técnicas: [evaluacion-dashboard-ejecutivo.md](docs/evidencias/evaluacion-dashboard-ejecutivo.md) |
 | R8.7 | Dashboard operacional con drill-down por IP, más la investigación guiada con cronómetro del panel | `kibana/construir_dashboards.py`, `panel/` | Cada investigación queda medida en `siem-investigaciones` (objetivo < 5 min) |
 | R8.8 | 2 playbooks: fuerza bruta SSH e inyección SQL, también como flujo guiado en el panel | `docs/playbooks/`, `panel/` | Probados con ataques reales; la investigación guiada registra quién los siguió |
 
@@ -218,16 +245,18 @@ Resultados de la corrida final, con capturas: [docs/evidencias/resultados-2026-1
 ├── docker-compose.yml       stack completo
 ├── .env.example             variables (copiar a .env)
 ├── setup/                   certificados, ILM, templates y configuración de Kibana
-├── logstash/pipeline/       10-entrada · 20-auth · 30-nginx · 40-syslog · 80-enriquecer · 90-salida
+├── logstash/pipeline/       10-entrada · 20-auth · 30-nginx · 40-syslog · 50-k8s · 80-enriquecer · 90-salida
 ├── filebeat/                recolección
+├── kubernetes/              app de ejemplo y Filebeat como DaemonSet (cuarta fuente)
+├── panel/                   centro de operaciones web (:8090)
 ├── reglas/                  reglas de detección (JSON de la API de Kibana)
 ├── kibana/                  kibana.yml, construir_dashboards.py y el ndjson que genera
 ├── victima/                 servidor atacado (sshd, nginx, rsyslog y portguard)
 ├── atacante/                nmap, hydra y sqlmap, más el tráfico normal
 ├── generadores/             histórico de N días
-├── scripts/                 verificar, atacar y medir, demo de ILM y exportar dashboards
+├── scripts/                 verificar, atacar y medir, ILM, Kubernetes, capturas y grabar la demo
 ├── docs/                    playbooks, evidencias, plan de trabajo
-└── diapositivas/            presentación final
+└── diapositivas/            presentación (PPTX y PDF), video de la demo y guion de la sustentación
 ```
 
 ## Uso responsable

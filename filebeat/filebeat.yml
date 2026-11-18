@@ -56,9 +56,10 @@ filebeat.inputs:
     prospector.scanner.fingerprint: { enabled: true, offset: 0, length: 64 }
     file_identity.fingerprint: ~
 
-  # ---- Kubernetes (opcional, cuarta fuente) ----
-  # Ver docs/kubernetes.md: con minikube se monta /var/log/containers y se agrega
-  # aquí un input con fields: { origen: k8s } + un filtro 50-k8s.conf en Logstash.
+  # ---- Kubernetes (cuarta fuente) ----
+  # No se lee desde aquí: Filebeat corre como DaemonSet dentro del clúster k3s
+  # (kubernetes/filebeat-k8s.yaml) y manda al mismo Logstash con fields.origen = k8s.
+  # Ver docs/kubernetes.md y scripts/kubernetes.sh.
 
 output.logstash:
   hosts: ["logstash:5044"]

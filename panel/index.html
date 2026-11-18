@@ -72,7 +72,7 @@
   .ln .hr { color: var(--faint); } .ln .msg { overflow: hidden; text-overflow: ellipsis; color: var(--mut); }
   .src { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; padding: 1px 0; }
   .src.auth { color: #e6c24f; } .src.nginx { color: #6cc5ff; } .src.syslog { color: #9d7bff; }
-  .src.red { color: #ff9a57; } .src.errores { color: #e5564b; }
+  .src.red { color: #ff9a57; } .src.errores { color: #e5564b; } .src.k8s { color: #4fd1a5; }
   .ipc { color: var(--acc); cursor: pointer; } .ipc:hover { text-decoration: underline; }
   .ipc.int { color: var(--faint); cursor: default; } .ipc.int:hover { text-decoration: none; }
   .oc { font-size: 10.5px; text-align: right; }
@@ -202,7 +202,7 @@
 
 <div class="tira">
   <div class="met estado-cluster" id="mCluster"><div class="k">Clúster</div><div class="v" id="cluster">…</div><div class="x" id="nodos"></div></div>
-  <div class="met"><div class="k">Eventos analizados · R8.2</div><div class="v" id="eventos">…</div><div class="x">auth · nginx · syslog · red</div></div>
+  <div class="met"><div class="k">Eventos analizados · R8.2</div><div class="v" id="eventos">…</div><div class="x">auth · nginx · syslog · k8s · red</div></div>
   <div class="met"><div class="k">Parseo correcto · R8.3</div><div class="v" id="parseo">…</div><div class="x" id="rechazados"></div></div>
   <div class="met"><div class="k">Alertas hoy · R8.4</div><div class="v" id="alertasHoy">…</div>
     <div class="sevline"><span class="sb c" id="sbC">C 0</span><span class="sb h" id="sbH">A 0</span><span class="sb m" id="sbM">M 0</span><span class="sb l" id="sbL">B 0</span></div></div>
@@ -353,6 +353,7 @@ function ipHtml(ip, interna) {
 
 function detalle(l) {
   if (l.fuente === "nginx") return `${l.codigo ?? ""} ${esc(l.url || "")}`.trim();
+  if (l.fuente === "k8s") return `<span style="color:#4fd1a5">${esc(l.pod || "")}</span> ${l.codigo ? l.codigo + " " + esc(l.url || "") : esc(l.msg || "")}`;
   if (l.fuente === "auth") return `${esc(l.accion || "")} ${esc(l.usuario || "")}`.trim();
   if (l.fuente === "errores") return `⚠ ${esc(l.msg || "")}`;
   return `${esc(l.accion || "")} ${esc(l.msg || "")}`.trim();

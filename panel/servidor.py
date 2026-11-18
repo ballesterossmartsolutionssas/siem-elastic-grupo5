@@ -67,7 +67,8 @@ def resumen():
         return [x["doc_count"] for x in b["aggregations"]["t"]["buckets"]][-30:]
 
     def fuentes():
-        b = es("/logs-siem.*/_search", {"size": 0,
+        # siem.ilmdemo es la prueba acelerada de ILM, no una fuente de logs
+        b = es("/logs-siem.*/_search", {"size": 0, "query": {"bool": {"must_not": [{"term": {"data_stream.dataset": "siem.ilmdemo"}}]}},
                "aggs": {"f": {"terms": {"field": "data_stream.dataset", "size": 10}}}})
         return [{"nombre": x["key"].replace("siem.", ""), "n": x["doc_count"]} for x in b["aggregations"]["f"]["buckets"]]
 
@@ -140,7 +141,7 @@ def logs(desde):
         r = es("/logs-siem.*/_search", {"size": 45, "sort": [{"@timestamp": "desc"}],
                "_source": ["@timestamp", "data_stream.dataset", "source.ip", "source.geo.country_name",
                            "event.action", "event.outcome", "http.response.status_code",
-                           "url.original", "message", "user.name", "tags"],
+                           "url.original", "message", "user.name", "tags", "kubernetes.pod.name"],
                "query": {"range": {"@timestamp": {"gte": desde}}}})
         out = []
         for h in r["hits"]["hits"]:
@@ -158,6 +159,7 @@ def logs(desde):
                 "url": campo(s, "url.original", "url", "original"),
                 "msg": (campo(s, "message") or ""),
                 "interna": "red_interna" in tags if isinstance(tags, list) else False,
+                "pod": campo(s, "kubernetes.pod.name", "kubernetes", "pod", "name"),
             })
         return out
     return intenta(q, [])
@@ -319,7 +321,9 @@ def cumplimiento(r, sal, inv):
     disparadas = len(intenta(lambda: reglas_por_nombre("now-7d"), set()))
     hoy = intenta(lambda: reglas_por_nombre("now-24h"), set())
     fuentes = [f for f in r["fuentes"] if f["nombre"] != "errores" and f["n"] > 0]
-    analistas = {i.get("analista") for i in inv}
+    # R8.8 pide personas del grupo: la investigación que hace scripts/grabar-demo.py no cuenta
+    analistas = {i.get("analista") for i in inv
+                 if not str(i.get("analista", "")).lower().startswith(("demo", "prueba"))}
     mejor = min((i["duracion_s"] for i in inv), default=None)
     return [
         {"id": "R8.1", "nombre": "Clúster e ILM",

@@ -80,3 +80,11 @@ Fuerza bruta lanzada con el botón del panel a las 15:34:14 UTC:
 - El panel marcó **VOLUMEN ANÓMALO** con z = +6,0 σ: 241 eventos en 5 minutos contra un promedio de 10,4.
 - La franja de cumplimiento del panel mostró R8.1 a R8.6 en verde. R8.7 y R8.8 se cumplen cuando se cierran investigaciones guiadas con el panel, y deben hacerlas integrantes que no escribieron los playbooks.
 - Captura: [R8.0-centro-de-operaciones.png](R8.0-centro-de-operaciones.png).
+
+## Agregado al mediodía del 18 nov: Kubernetes, ILM y errores
+
+- **R8.2, Kubernetes (cuarta fuente):** `bash scripts/kubernetes.sh crear` levantó k3s con k3d en la red `siem_siem`, con la app `tienda` (2 pods de nginx y un generador de tráfico) y Filebeat como DaemonSet. En el primer minuto llegaron 60 eventos a `logs-siem.k8s-default`, con `kubernetes.namespace`, `kubernetes.pod.name` y `kubernetes.node.name`, y el HTTP parseado. Captura: [R8.2-kubernetes.png](R8.2-kubernetes.png).
+- **R8.1, ILM acelerado:** `scripts/demo-ilm.sh` dejó 5 índices en COLD, 2 en WARM y 1 en HOT (respuesta real de `_ilm/explain`). Captura: [R8.1-ilm-warm-cold.png](R8.1-ilm-warm-cold.png).
+- **R8.3, índice de errores:** 146 rechazados, cada uno con su motivo en `error.message`. Captura: [R8.3-indice-errores.png](R8.3-indice-errores.png).
+- **R8.6:** la plantilla de evaluación con personas no técnicas está en [evaluacion-dashboard-ejecutivo.md](evaluacion-dashboard-ejecutivo.md). Falta llenarla.
+- **Demo:** grabada con `python scripts/grabar-demo.py` en `diapositivas/demo-SIEM-Grupo5.mp4`, sin audio y con subtítulos por parte, como pidió el profesor.

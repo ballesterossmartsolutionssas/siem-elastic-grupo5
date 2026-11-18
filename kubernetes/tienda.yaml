@@ -1,0 +1,72 @@
+# App de ejemplo en Kubernetes: un nginx ("web") y un generador de tráfico ("clientes").
+# Sus logs los recoge Filebeat (filebeat-k8s.yaml) y llegan al SIEM como logs-siem.k8s-default.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tienda
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: tienda
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.29-alpine
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 80 }]
+          resources:
+            limits: { memory: 64Mi, cpu: 100m }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: tienda
+spec:
+  selector: { app: web }
+  ports: [{ port: 80, targetPort: 80 }]
+---
+# Clientes: visitas normales y, de vez en cuando, una ráfaga que busca rutas sensibles (404)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clientes
+  namespace: tienda
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: clientes }
+  template:
+    metadata:
+      labels: { app: clientes }
+    spec:
+      containers:
+        - name: clientes
+          image: nginx:1.29-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              i=0
+              while true; do
+                i=$((i+1))
+                wget -q -O /dev/null -U "Mozilla/5.0 (cliente-k8s)" http://web/ 2>/dev/null
+                wget -q -O /dev/null -U "Mozilla/5.0 (cliente-k8s)" http://web/index.html 2>/dev/null
+                if [ $((i % 20)) -eq 0 ]; then
+                  for ruta in .env .git/config admin wp-login.php backup.zip; do
+                    wget -q -O /dev/null -U "gobuster/3.6" "http://web/$ruta" 2>/dev/null
+                  done
+                fi
+                sleep 3
+              done
+          resources:
+            limits: { memory: 32Mi, cpu: 50m }
