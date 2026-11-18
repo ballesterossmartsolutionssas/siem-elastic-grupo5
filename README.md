@@ -32,7 +32,7 @@ Un SIEM sencillo y reproducible con un solo comando. Un servidor **víctima** ge
                    └─────────────────────┬────────────────────┘
                                          ▼
                    ┌──────────────────────────────────────────┐
-                   │ Kibana: Security (7 reglas) · Dashboards │
+                   │ Kibana: Security (8 reglas) · Dashboards │
                    └──────────────────────────────────────────┘
 ```
 
@@ -90,11 +90,16 @@ docker compose logs -f setup kibana-setup
 
 **<http://localhost:8090>** — un panel web propio desde donde se maneja todo sin tocar la terminal:
 
-- estado de la plataforma en vivo (clúster, eventos, tasa de parseo, alertas y severidades de hoy);
-- gráfica de eventos por minuto y eventos por fuente;
-- enlaces a todos los tableros de Kibana;
+- **cumplimiento en vivo**: una franja con R8.1 a R8.8 que se pone en verde sola con las mediciones reales (clúster, fuentes, parseo, reglas que dispararon, escenarios atacados, investigaciones);
+- estado de la plataforma (clúster, eventos, tasa de parseo, alertas y severidades de hoy), eventos por minuto y por fuente;
+- **salud del sistema**: heap, disco y CPU de cada nodo, índices por fase de ILM y segundos desde el último evento;
+- **detección de anomalías de volumen**: compara los últimos 5 minutos con la línea base de 24 h (z-score) y marca «VOLUMEN ANÓMALO» a partir de 3 desviaciones;
+- flujo de logs en vivo;
 - **botones para lanzar los 4 ataques**, con la consola del ataque y el tiempo hasta la alerta;
-- feed de alertas recientes y top de IPs atacantes.
+- **incidentes** agrupados por regla e IP (los críticos arriba) y top de IPs atacantes;
+- clic en una IP: qué hizo, cuántos fallos y **si logró entrar**, puertos tocados, herramienta y reglas que disparó;
+- **investigación guiada (R8.7 y R8.8)**: desde la IP se abre el playbook que corresponde, con cronómetro, la evidencia ya cargada, enlaces al dashboard operacional filtrado, la clasificación sugerida y los pasos de contención. Al cerrar el incidente se guarda en el índice `siem-investigaciones` quién lo investigó y en cuánto tiempo;
+- enlaces a todos los tableros de Kibana.
 
 Es la forma recomendada de mostrar el proyecto. Kibana queda un clic más adentro para el detalle.
 
@@ -103,7 +108,7 @@ Es la forma recomendada de mostrar el proyecto. Kibana queda un clic más adentr
 <http://localhost:5601>: usuario `elastic` y la contraseña `ELASTIC_PASSWORD` del `.env`.
 
 - **Discover**, data view `SIEM - todos los logs`: los eventos en vivo.
-- **Security → Rules**: las 7 reglas cargadas.
+- **Security → Rules**: las 8 reglas cargadas.
 - **Security → Alerts**: las alertas.
 
 ### 5. Verificar (R8.1, R8.2 y R8.3)
@@ -191,13 +196,15 @@ Resultados de la corrida final, con capturas: [docs/evidencias/resultados-2026-1
 | R8.1 | 3 nodos con TLS; ILM `siem-30d` (borra a los 30 días) y `siem-demo` acelerada | `docker-compose.yml`, `setup/ilm/`, `scripts/demo-ilm.sh` | Clúster green; índices en warm y cold en 8 min |
 | R8.2 | auth.log, syslog y nginx reales en la víctima, más puertos señuelo; ECS por `ecs@mappings` | `victima/`, `filebeat/filebeat.yml`, `setup/templates/` | 4 fuentes visibles en Kibana |
 | R8.3 | grok, date, mutate, geoip, cidr y urldecode; los malformados van a `logs-siem.errores` con `error.message` | `logstash/pipeline/` | 99,16 % parseado |
-| R8.4 | 5 reglas pedidas, más inyección SQL y una de correlación EQL (fuerza bruta seguida de ingreso = cuenta comprometida) | `reglas/` | Las 7 disparan |
+| R8.4 | 5 reglas pedidas, más inyección SQL, una de correlación EQL (fuerza bruta seguida de ingreso = cuenta comprometida) y una de anomalía *new terms* (usuario que entra desde una IP nunca vista en 7 días) | `reglas/` | Las 8 disparan |
 | R8.5 | Ataques reales: nmap, hydra, sqlmap y curl | `atacante/`, `scripts/atacar-y-medir.sh` | Alertas en 13 a 28 s (la correlación, en 52 s) |
 | R8.6 | Dashboard ejecutivo con mapa, tendencia y salud | `kibana/construir_dashboards.py` | Listo |
-| R8.7 | Dashboard operacional con drill-down por IP | `kibana/construir_dashboards.py` | Investigación en menos de 1 min |
-| R8.8 | 2 playbooks: fuerza bruta SSH e inyección SQL | `docs/playbooks/` | Probados 2 veces con ataques reales (4 y 18 nov) |
+| R8.7 | Dashboard operacional con drill-down por IP, más la investigación guiada con cronómetro del panel | `kibana/construir_dashboards.py`, `panel/` | Cada investigación queda medida en `siem-investigaciones` (objetivo < 5 min) |
+| R8.8 | 2 playbooks: fuerza bruta SSH e inyección SQL, también como flujo guiado en el panel | `docs/playbooks/`, `panel/` | Probados con ataques reales; la investigación guiada registra quién los siguió |
 
 ## Decisiones de diseño
+
+- **Correlación y anomalías sin licencia de pago:** el *machine learning* de Elastic pide licencia Platinum. Para la parte de anomalías se usaron las herramientas de la licencia Basic: una regla *new terms* (combinación usuario + IP nunca vista), una secuencia EQL (fallos seguidos de éxito) y, en el panel, un z-score del volumen de eventos contra la línea base de 24 h.
 
 - **Data streams `logs-siem.<dataset>-default`** en vez de índices con fecha y alias: el rollover y el ILM los maneja Elasticsearch solo, y los componentes `ecs@mappings` y `logs@mappings` dejan los campos ECS bien tipados (por ejemplo, `source.ip` como `ip` y `source.geo.location` como `geo_point`).
 - **Víctima real en vez de solo logs inventados:** los ataques de la demo son de verdad (hydra contra sshd y nmap contra los puertos), y los logs salen de los servicios reales.

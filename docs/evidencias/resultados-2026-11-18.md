@@ -66,3 +66,17 @@ Kibana guarda además una alerta interna (*building block*) por cada evento de l
 - **SIEM - Ejecutivo** (7 días): 22 alertas hoy, 10 graves, 12 IPs atacantes, el mapa (Países Bajos, Alemania, Lituania, China, Brasil y Estados Unidos) y la tendencia del 11 al 18 nov. Captura: [R8.6-dashboard-ejecutivo.png](R8.6-dashboard-ejecutivo.png).
 - **SIEM - Operacional** filtrado por `192.168.80.11`: en una pantalla salen las 3 alertas de esa IP, 48 fallos, 19 puertos tocados, y en *Top usuarios en SSH* `admin` con **1 éxito**. Captura: [R8.7-operacional-filtrado-por-ip.png](R8.7-operacional-filtrado-por-ip.png).
 - **Centro de operaciones** (`http://localhost:8090`): [R8.0-centro-de-operaciones.png](R8.0-centro-de-operaciones.png).
+
+## Agregado en la mañana del 18 nov: panel y anomalías
+
+Fuerza bruta lanzada con el botón del panel a las 15:34:14 UTC:
+
+| Hora (UTC) | Alerta |
+| --- | --- |
+| 15:34:26 | SIEM - Fuerza bruta SSH (alta): **12 s** |
+| 15:35:26 | SIEM - Acceso tras fuerza bruta (crítica) |
+| 15:35:26 | **SIEM - Ingreso desde una IP nueva** (regla 08, *new terms*): `admin` entró desde una IP que no se había visto en 7 días |
+
+- El panel marcó **VOLUMEN ANÓMALO** con z = +6,0 σ: 241 eventos en 5 minutos contra un promedio de 10,4.
+- La franja de cumplimiento del panel mostró R8.1 a R8.6 en verde. R8.7 y R8.8 se cumplen cuando se cierran investigaciones guiadas con el panel, y deben hacerlas integrantes que no escribieron los playbooks.
+- Captura: [R8.0-centro-de-operaciones.png](R8.0-centro-de-operaciones.png).

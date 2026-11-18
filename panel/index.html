@@ -129,6 +129,65 @@
     border-radius: 6px; padding: 9px; font-size: 13px; font-weight: 600; }
   .btnk:hover { background: rgba(63,182,204,.1); }
   .vacio { color: var(--faint); font-size: 12.5px; }
+
+  /* ---- cumplimiento del enunciado ---- */
+  .req { display: grid; grid-template-columns: repeat(8, 1fr); gap: 1px; background: var(--borde); border-bottom: 1px solid var(--borde); }
+  .rq { background: var(--panel2); padding: 9px 12px; position: relative; }
+  .rq .i { font-family: var(--mono); font-size: 11px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+  .rq .i .ck { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--faint); display: inline-grid; place-items: center; font-size: 9px; }
+  .rq.ok .i { color: var(--verde); } .rq.ok .i .ck { border-color: var(--verde); background: var(--verde); color: #06110a; }
+  .rq .n { font-size: 12.5px; font-weight: 600; margin-top: 2px; }
+  .rq .d { font-size: 11px; color: var(--mut); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 1100px) { .req { grid-template-columns: repeat(4, 1fr); } }
+
+  /* ---- salud ---- */
+  .g3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 1000px) { .g3 { grid-template-columns: 1fr; } }
+  .nodo { display: grid; grid-template-columns: 46px 1fr 1fr 44px; gap: 10px; align-items: center; font-size: 12px; margin: 7px 0; }
+  .nodo .nm { font-family: var(--mono); color: var(--txt); }
+  .medidor { display: grid; gap: 3px; } .medidor .l { color: var(--faint); font-size: 10.5px; display: flex; justify-content: space-between; }
+  .medidor .bg { height: 5px; background: #0a0f16; border-radius: 3px; overflow: hidden; }
+  .medidor .bar { height: 100%; background: var(--verde); }
+  .medidor .bar.warn { background: var(--ambar); } .medidor .bar.bad { background: var(--rojo); }
+  .nodo .cpu { font-family: var(--mono); color: var(--mut); text-align: right; }
+  .fases { display: flex; gap: 6px; margin: 4px 0 12px; flex-wrap: wrap; }
+  .fase { font: 600 11px var(--mono); padding: 3px 9px; border-radius: 4px; background: #0a0f16; color: var(--faint); border: 1px solid var(--borde); }
+  .fase.on.hot { color: #ff8f82; border-color: #5a241d; } .fase.on.warm { color: #e6c24f; border-color: #4e3f12; }
+  .fase.on.cold { color: #6cc5ff; border-color: #1b3a52; } .fase.on.delete { color: var(--mut); }
+  .dato { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--borde); }
+  .dato:last-child { border: 0; } .dato .v { font-family: var(--mono); }
+  .anom { font: 600 30px var(--mono); line-height: 1; }
+  .anom.mal { color: var(--rojo); } .anom.bien { color: var(--verde); }
+  .badge { display: inline-block; font: 600 10.5px var(--mono); padding: 2px 8px; border-radius: 3px; margin-top: 6px; }
+  .badge.mal { background: #2a1310; color: #ff8f82; } .badge.bien { background: #0e2416; color: #6fd98a; }
+
+  /* ---- alertas agrupadas ---- */
+  tr.critica td { background: rgba(229,86,75,.09); } tr.critica td:first-child { box-shadow: inset 3px 0 0 var(--rojo); }
+  .veces { font-family: var(--mono); color: var(--mut); text-align: right; }
+  .sev.critical { background: #4a1510; color: #ffb3aa; font-weight: 700; }
+
+  /* ---- investigación guiada (R8.7 y R8.8) ---- */
+  .kv.k6 { grid-template-columns: repeat(3, 1fr); }
+  .kv .c.alarma { border-color: #7a2a24; } .kv .c.alarma .v { color: #ff8f82; }
+  .btnp { border: 0; background: var(--acc); color: #04161b; border-radius: 6px; padding: 10px; font: 700 13px inherit; cursor: pointer; }
+  .btnp:hover { filter: brightness(1.1); } .btnp:disabled { opacity: .45; cursor: not-allowed; }
+  .modal.grande { width: 860px; }
+  .crono { font: 600 26px var(--mono); color: var(--acc); }
+  .crono.tarde { color: var(--rojo); }
+  .pasos { display: grid; gap: 8px; }
+  .paso { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 10px 12px; background: var(--panel2); border: 1px solid var(--borde); border-radius: 8px; }
+  .paso.hecho { border-color: #1d4228; }
+  .paso input { width: 17px; height: 17px; accent-color: var(--verde); margin-top: 1px; cursor: pointer; }
+  .paso .t { font-weight: 600; font-size: 13px; } .paso .e { color: var(--mut); font-size: 12px; margin-top: 3px; }
+  .paso .e code, .cmd { font-family: var(--mono); font-size: 11.5px; color: #8fe0a6; background: #070a0e; padding: 1px 5px; border-radius: 3px; }
+  .fase-t { color: var(--mut); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin: 6px 0 -2px; }
+  .campo { display: grid; gap: 4px; font-size: 12px; color: var(--mut); }
+  .campo input, .campo select, .campo textarea { background: #070a0e; border: 1px solid var(--borde2); color: var(--txt); border-radius: 6px; padding: 8px 10px; font: 13px inherit; }
+  .campo textarea { min-height: 60px; resize: vertical; }
+  .fila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .resultado { padding: 14px; border-radius: 8px; background: #0e2416; border: 1px solid #1d4228; color: #6fd98a; font-size: 14px; }
+  .resultado.tarde { background: #2a1310; border-color: #5a241d; color: #ff8f82; }
+  .ok5 { color: var(--verde); font-family: var(--mono); } .no5 { color: var(--rojo); font-family: var(--mono); }
 </style>
 </head>
 <body>
@@ -149,11 +208,32 @@
     <div class="sevline"><span class="sb c" id="sbC">C 0</span><span class="sb h" id="sbH">A 0</span><span class="sb m" id="sbM">M 0</span><span class="sb l" id="sbL">B 0</span></div></div>
 </div>
 
+<div class="req" id="req"></div>
+
 <main>
   <div class="g2">
     <div class="panel"><div class="ph"><span class="t">Eventos por minuto · últimos 30 min</span><span id="serieTot" class="mono"></span></div>
       <div class="pb"><svg class="spark" id="spark" viewBox="0 0 600 86" preserveAspectRatio="none"></svg></div></div>
     <div class="panel"><div class="ph"><span class="t">Eventos por fuente</span></div><div class="pb" id="fuentes"></div></div>
+  </div>
+
+  <div class="rotulo">Salud general del sistema · R8.1 · R8.6</div>
+  <div class="g3">
+    <div class="panel"><div class="ph"><span class="t">Nodos del clúster</span><span class="mono" style="color:var(--faint)">heap · disco · cpu</span></div><div class="pb" id="nodos3"></div></div>
+    <div class="panel"><div class="ph"><span class="t">Ciclo de vida e ingesta</span></div><div class="pb">
+      <div style="color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Índices por fase ILM</div>
+      <div class="fases" id="fases"></div>
+      <div class="dato"><span>Política</span><span class="v" id="politica">—</span></div>
+      <div class="dato"><span>Último evento hace</span><span class="v" id="retraso">—</span></div>
+      <div class="dato"><span>Retención</span><span class="v">30 días</span></div>
+    </div></div>
+    <div class="panel"><div class="ph"><span class="t">Detección de anomalías</span><span class="mono" style="color:var(--faint)">volumen · z-score</span></div><div class="pb">
+      <div class="anom bien" id="anomZ">—</div>
+      <div id="anomBadge"></div>
+      <div class="dato" style="margin-top:10px"><span>Eventos últimos 5 min</span><span class="v" id="anomAct">—</span></div>
+      <div class="dato"><span>Promedio cada 5 min (24 h)</span><span class="v" id="anomMed">—</span></div>
+      <div class="vacio" style="margin-top:6px">Alerta si el volumen supera la línea base en 3 desviaciones estándar.</div>
+    </div></div>
   </div>
 
   <div class="rotulo">Flujo de eventos en vivo · tail del SIEM</div>
@@ -179,11 +259,18 @@
     </div>
 
     <div style="display:grid;gap:14px">
-      <div class="panel"><div class="ph"><span class="t">Alertas recientes · 24 h</span><span class="mono" style="color:var(--faint)">clic en la IP para investigar</span></div>
-        <div class="scroll"><table><thead><tr><th>Hora</th><th>Regla</th><th>Sev</th><th>IP</th></tr></thead><tbody id="alertas"><tr><td colspan="4" class="vacio">Cargando…</td></tr></tbody></table></div></div>
+      <div class="panel"><div class="ph"><span class="t">Incidentes · 24 h</span><span class="mono" style="color:var(--faint)">clic en la IP para investigar</span></div>
+        <div class="scroll"><table><thead><tr><th>Última</th><th>Regla</th><th>Sev</th><th>IP</th><th style="text-align:right">×</th></tr></thead><tbody id="alertas"><tr><td colspan="5" class="vacio">Cargando…</td></tr></tbody></table></div></div>
       <div class="panel"><div class="ph"><span class="t">Top IPs atacantes · 24 h</span></div>
         <table><thead><tr><th>IP</th><th>País</th><th style="text-align:right">Eventos</th></tr></thead><tbody id="topips"><tr><td colspan="3" class="vacio">Cargando…</td></tr></tbody></table></div>
     </div>
+  </div>
+
+  <div class="rotulo">Investigaciones guiadas registradas · R8.7 · R8.8</div>
+  <div class="panel">
+    <div class="ph"><span class="t">Incidentes cerrados con el playbook</span><span class="mono" style="color:var(--faint)">índice siem-investigaciones</span></div>
+    <table><thead><tr><th>Cerrada</th><th>Analista</th><th>IP</th><th>Playbook</th><th>Clasificación</th><th>Pasos</th><th style="text-align:right">Duración</th></tr></thead>
+      <tbody id="invs"><tr><td colspan="7" class="vacio">Aún no hay investigaciones. Clic en una IP atacante → «Iniciar investigación guiada».</td></tr></tbody></table>
   </div>
 
   <div class="rotulo">Abrir en Kibana</div>
@@ -208,12 +295,29 @@
         <div class="c"><div class="k">Primero</div><div class="v" id="mPrimero" style="font-size:13px">—</div></div>
         <div class="c"><div class="k">Último</div><div class="v" id="mUltimo" style="font-size:13px">—</div></div>
       </div>
+      <div class="kv">
+        <div class="c" id="cFallos"><div class="k">Fallos SSH</div><div class="v" id="mFallos">—</div></div>
+        <div class="c" id="cExitos"><div class="k">Ingresos exitosos</div><div class="v" id="mExitos">—</div></div>
+        <div class="c"><div class="k">Puertos tocados</div><div class="v" id="mPuertos">—</div></div>
+      </div>
+      <div id="mHerr" class="vacio"></div>
       <div><div class="k" style="color:var(--mut);font-size:11px;text-transform:uppercase;margin-bottom:4px">Reglas que disparó</div>
         <div class="lista reglaslist" id="mReglas"></div></div>
       <div><div class="k" style="color:var(--mut);font-size:11px;text-transform:uppercase;margin-bottom:4px">Qué hizo (acciones)</div>
         <div class="lista" id="mAcciones"></div></div>
-      <a class="btnk" id="mKibana" target="_blank">Investigar esta IP en Kibana →</a>
+      <button class="btnp" id="mGuiada">Iniciar investigación guiada (playbook) →</button>
+      <a class="btnk" id="mKibana" target="_blank">Ver esta IP en Discover →</a>
     </div>
+  </div>
+</div>
+
+<div class="fondo" id="fondoInv">
+  <div class="modal grande">
+    <div class="mh">
+      <div><h3 id="iTitulo">Investigación</h3><div class="pais" id="iSub"></div></div>
+      <div style="display:flex;align-items:center;gap:18px"><span class="crono" id="iCrono">0:00</span><button class="cerrar" id="iCerrar" title="Cancelar">✕</button></div>
+    </div>
+    <div class="mb" id="iCuerpo"></div>
   </div>
 </div>
 
@@ -285,6 +389,9 @@ async function refrescar() {
     chip("sbC", s.critical, "C"); chip("sbH", s.high, "A"); chip("sbM", s.medium, "M"); chip("sbL", s.low, "B");
     spark(r.serie || []); fuentes(r.fuentes || []);
     pintarAlertas(r.alertas || []);
+    pintarRequisitos(r.requisitos || []);
+    pintarSalud(r.salud || {});
+    pintarInvestigaciones(r.investigaciones || []);
     $("topips").innerHTML = (r.top_ips || []).length ? r.top_ips.map((x) =>
       `<tr><td class="mono">${ipHtml(x.ip)}</td><td style="color:var(--mut)">${esc(x.pais)}</td><td class="mono" style="text-align:right">${nf(x.n)}</td></tr>`).join("")
       : '<tr><td colspan="3" class="vacio">Sin IPs externas aún</td></tr>';
@@ -294,9 +401,42 @@ async function refrescar() {
 function pintarAlertas(a) {
   $("alertas").innerHTML = a.length ? a.map((x) => {
     const id = x.hora + x.regla + (x.ip || ""), nueva = !vistasA.has(id);
-    return `<tr class="${nueva ? "newrow" : ""}"><td class="mono hr" style="color:var(--faint)">${hhmmss(x.hora)}</td><td>${esc(x.regla)}</td><td><span class="sev ${esc(x.severidad)}">${esc(x.severidad)}</span></td><td class="mono">${ipHtml(x.ip)}</td></tr>`;
-  }).join("") : '<tr><td colspan="4" class="vacio">Sin alertas en 24 h</td></tr>';
+    const cls = [nueva ? "newrow" : "", x.severidad === "critical" ? "critica" : ""].join(" ");
+    return `<tr class="${cls}"><td class="mono hr" style="color:var(--faint)">${hhmmss(x.hora)}</td><td>${esc(x.regla.replace("SIEM - ", ""))}</td><td><span class="sev ${esc(x.severidad)}">${esc(x.severidad)}</span></td><td class="mono">${ipHtml(x.ip)}</td><td class="veces">${x.n}</td></tr>`;
+  }).join("") : '<tr><td colspan="5" class="vacio">Sin alertas en 24 h</td></tr>';
   a.forEach((x) => vistasA.add(x.hora + x.regla + (x.ip || "")));
+}
+
+function pintarRequisitos(l) {
+  $("req").innerHTML = l.map((q) => `<div class="rq ${q.ok ? "ok" : ""}" title="${esc(q.dato)}">
+    <div class="i"><span class="ck">${q.ok ? "✓" : ""}</span>${esc(q.id)}</div>
+    <div class="n">${esc(q.nombre)}</div><div class="d">${esc(q.dato)}</div></div>`).join("");
+}
+
+function medidor(nombre, v) {
+  const c = v >= 85 ? "bad" : v >= 70 ? "warn" : "";
+  return `<div class="medidor"><div class="l"><span>${nombre}</span><span>${v}%</span></div><div class="bg"><div class="bar ${c}" style="width:${Math.min(100, v)}%"></div></div></div>`;
+}
+
+function pintarSalud(s) {
+  $("nodos3").innerHTML = (s.nodos || []).map((n) => `<div class="nodo"><span class="nm">${esc(n.nombre)}</span>${medidor("heap", n.heap)}${medidor("disco", n.disco)}<span class="cpu">${n.cpu}%</span></div>`).join("") || '<span class="vacio">Sin datos de los nodos</span>';
+  const f = (s.ilm || {}).fases || {};
+  $("fases").innerHTML = ["hot", "warm", "cold", "delete"].map((k) => `<span class="fase ${k} ${f[k] ? "on" : ""}">${k.toUpperCase()} ${f[k] || 0}</span>`).join("");
+  $("politica").textContent = ((s.ilm || {}).politicas || []).join(", ") || "—";
+  $("retraso").textContent = s.retraso_s == null ? "—" : (s.retraso_s < 120 ? Math.max(0, Math.round(s.retraso_s)) + " s" : Math.round(s.retraso_s / 60) + " min");
+  const v = s.volumen;
+  if (v) {
+    $("anomZ").textContent = (v.z > 0 ? "+" : "") + v.z.toFixed(1) + " σ";
+    $("anomZ").className = "anom " + (v.anomalo ? "mal" : "bien");
+    $("anomBadge").innerHTML = `<span class="badge ${v.anomalo ? "mal" : "bien"}">${v.anomalo ? "VOLUMEN ANÓMALO" : "volumen normal"}</span>`;
+    $("anomAct").textContent = nf(v.actual); $("anomMed").textContent = nf(v.media);
+  }
+}
+
+const durTxt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+function pintarInvestigaciones(l) {
+  if (!l.length) return;
+  $("invs").innerHTML = l.map((i) => `<tr><td class="mono" style="color:var(--faint)">${fechaCorta(i["@timestamp"])}</td><td>${esc(i.analista)}</td><td class="mono">${esc(i.ip)}</td><td>${esc(i.playbook)}</td><td>${esc(i.clasificacion)}</td><td class="mono">${i.pasos_hechos}/${i.pasos_total}</td><td style="text-align:right" class="${i.duracion_s < 300 ? "ok5" : "no5"}">${durTxt(i.duracion_s)} ${i.duracion_s < 300 ? "✓" : "✗"}</td></tr>`).join("");
 }
 
 async function refrescarStream() {
@@ -312,14 +452,125 @@ async function investigar(ip) {
   $("mKibana").href = `http://localhost:5601/app/discover#/?_g=(time:(from:now-24h,to:now))&_a=${encodeURIComponent(a)}`;
   try {
     const d = await (await fetch("/api/ip/" + encodeURIComponent(ip))).json();
-    $("mPais").textContent = d.pais || "país desconocido";
+    $("mPais").textContent = d.pais || (/^(10|127|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(ip) ? "red interna del laboratorio" : "país desconocido");
     $("mTotal").textContent = nf(d.total);
     $("mPrimero").textContent = fechaCorta(d.primero); $("mUltimo").textContent = fechaCorta(d.ultimo);
-    $("mReglas").innerHTML = d.reglas.length ? d.reglas.map((x) => `<div class="it"><span>${esc(x.k)}</span><span class="n">${x.n}</span></div>`).join("") : '<div class="vacio">No disparó ninguna alerta</div>';
+    $("mReglas").innerHTML = d.reglas.length ? d.reglas.map((x) => `<div class="it"><span>${esc(x.k)} <span class="sev ${esc(x.sev || "")}">${esc(x.sev || "")}</span></span><span class="n">${x.n}</span></div>`).join("") : '<div class="vacio">No disparó ninguna alerta</div>';
+    $("mFallos").textContent = nf(d.fallos); $("mExitos").textContent = nf(d.exitos); $("mPuertos").textContent = nf(d.puertos);
+    $("cExitos").classList.toggle("alarma", d.exitos > 0);
+    $("mHerr").textContent = d.herramienta ? "Herramienta detectada por el user agent: " + d.herramienta : "";
+    ultimaIP = d;
     $("mAcciones").innerHTML = d.acciones.length ? d.acciones.map((x) => `<div class="it"><span>${esc(x.k)}</span><span class="n">${x.n}</span></div>`).join("") : '<div class="vacio">Sin eventos</div>';
   } catch { $("mTotal").textContent = "error"; }
 }
 $("mCerrar").onclick = () => $("fondo").classList.remove("ver");
+
+// ---- investigación guiada: el playbook paso a paso con cronómetro (R8.7 y R8.8) ----
+let ultimaIP = null, inv = null;
+const KB = "http://localhost:5601";
+const guardarLocal = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const leerLocal = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+
+function urlOperacional(ip) {
+  const a = `(query:(language:kuery,query:'source.ip : "${ip}"'))`;
+  return `${KB}/app/dashboards#/view/siem-dashboard-operacional?_g=(time:(from:now-24h,to:now))&_a=${encodeURIComponent(a)}`;
+}
+function urlDiscover(ip, extra, columnas) {
+  const a = `(columns:!(${columnas}),index:logs-siem,query:(language:kuery,query:'source.ip : "${ip}"${extra}'))`;
+  return `${KB}/app/discover#/?_g=(time:(from:now-24h,to:now))&_a=${encodeURIComponent(a)}`;
+}
+
+function pasosPlaybook(d) {
+  const ip = d.ip, usuariosConExito = (d.usuarios || []).filter((u) => u.exitos > 0).map((u) => u.usuario);
+  const reglas = (d.reglas || []).map((r) => r.k.replace("SIEM - ", "")).join(", ") || "ninguna";
+  if (d.playbook === "fuerza-bruta-ssh") {
+    const usuarios = (d.usuarios || []).map((u) => `${u.usuario}: ${u.fallos} fallos, ${u.exitos} éxitos`).join(" · ") || "sin intentos SSH";
+    return {
+      nombre: "Fuerza bruta SSH", archivo: "fuerza-bruta-ssh.md",
+      triage: [
+        ["Abrir la alerta en Security → Alerts y anotar IP y hora", `Alertas de ${ip}: ${esc(reglas)}. <a target="_blank" href="${KB}/app/security/alerts">Abrir alertas</a>`],
+        ["Filtrar el dashboard operacional por la IP", `<a target="_blank" href="${urlOperacional(ip)}">Abrir el operacional filtrado por ${esc(ip)}</a>`],
+        ["Revisar «Top usuarios en SSH»: ¿hubo algún ingreso exitoso?", `${esc(usuarios)}${usuariosConExito.length ? ` → <b style="color:#ff8f82">el atacante entró como ${esc(usuariosConExito.join(", "))}</b>` : ""}`],
+        ["¿La misma IP tiene más alertas? (escaneo antes, horario después)", `${d.puertos ? d.puertos + " puertos tocados por la misma IP. " : ""}${esc(reglas)}`],
+      ],
+      contencion: [
+        `ufw deny from ${ip}`,
+        ...usuariosConExito.map((u) => `pkill -KILL -u ${u}`),
+        ...usuariosConExito.map((u) => `passwd -l ${u}`),
+        "Marcar las alertas como Acknowledged en Kibana",
+      ],
+    };
+  }
+  return {
+    nombre: "Inyección SQL y reconocimiento web", archivo: "inyeccion-sql.md",
+    triage: [
+      ["Abrir la alerta y anotar IP, país y URL", `Alertas de ${ip}: ${esc(reglas)}. País: ${esc(d.pais || "—")}. <a target="_blank" href="${KB}/app/security/alerts">Abrir alertas</a>`],
+      ["Filtrar el dashboard operacional por la IP", `<a target="_blank" href="${urlOperacional(ip)}">Abrir el operacional filtrado por ${esc(ip)}</a>`],
+      ["Revisar el user agent y las rutas que probó", `${d.herramienta ? "Herramienta: <code>" + esc(d.herramienta) + "</code>. " : ""}${d.sensibles} rutas sensibles, ${d.e404} respuestas 404.`],
+      ["¿La inyección funcionó? Comparar código y tamaño de respuesta", `${d.sqli} peticiones con SQLi. <a target="_blank" href="${urlDiscover(ip, " and siem.sqli : true", "url.original,http.response.status_code,http.response.body.bytes,user_agent.original")}">Verlas en Discover con código y bytes</a>`],
+    ],
+    contencion: [
+      `Bloquear ${ip} en el WAF o el balanceador`,
+      "Si hubo explotación: quitar del aire /buscar (return 503)",
+      "Marcar las alertas como Acknowledged en Kibana",
+    ],
+  };
+}
+
+function iniciarInvestigacion() {
+  const d = ultimaIP; if (!d) return;
+  const pb = pasosPlaybook(d);
+  inv = { ip: d.ip, pb, inicio: Date.now(), timer: null };
+  $("fondo").classList.remove("ver");
+  $("iTitulo").textContent = `Incidente · ${d.ip}`;
+  $("iSub").innerHTML = `Playbook: <b>${esc(pb.nombre)}</b> · <a target="_blank" href="https://github.com/ballesterossmartsolutionssas/siem-elastic-grupo5/blob/main/docs/playbooks/${pb.archivo}">ver el playbook completo</a>`;
+  const n = pb.triage.length;
+  $("iCuerpo").innerHTML = `
+    <div class="fila2">
+      <label class="campo">Analista (quien sigue el playbook)<input id="iAnalista" placeholder="Nombre" value="${esc(leerLocal("analista"))}"></label>
+      <label class="campo">Clasificación (sugerida: ${esc(d.sugerida)})<select id="iClas">${["Crítica", "Alta", "Media", "Baja (falso positivo)"].map((c) => `<option ${c === d.sugerida ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+    </div>
+    <div class="fase-t">1 · Detección y triage</div>
+    <div class="pasos">${pb.triage.map((p, i) => `<label class="paso"><input type="checkbox" class="iPaso"><div><div class="t">${i + 1}. ${esc(p[0])}</div><div class="e">${p[1]}</div></div></label>`).join("")}</div>
+    <div class="fase-t">2 · Contención (se anota lo que se hizo)</div>
+    <div class="pasos">${pb.contencion.map((c) => `<label class="paso"><input type="checkbox" class="iCont" data-c="${esc(c)}"><div><span class="cmd">${esc(c)}</span></div></label>`).join("")}</div>
+    <label class="campo">Notas: erradicación, recuperación y lecciones aprendidas<textarea id="iNotas" placeholder="Qué se encontró y qué hay que mejorar"></textarea></label>
+    <button class="btnp" id="iFin">Cerrar incidente y registrar el tiempo</button>
+    <div id="iRes"></div>`;
+  document.querySelectorAll(".iPaso,.iCont").forEach((c) => c.addEventListener("change", () => c.closest(".paso").classList.toggle("hecho", c.checked)));
+  $("iFin").onclick = cerrarInvestigacion;
+  $("fondoInv").classList.add("ver");
+  const tic = () => { const s = Math.floor((Date.now() - inv.inicio) / 1000); $("iCrono").textContent = durTxt(s); $("iCrono").classList.toggle("tarde", s >= 300); };
+  tic(); inv.timer = setInterval(tic, 500);
+}
+
+async function cerrarInvestigacion() {
+  const analista = $("iAnalista").value.trim();
+  if (!analista) { $("iAnalista").focus(); $("iAnalista").style.borderColor = "var(--rojo)"; return; }
+  guardarLocal("analista", analista);
+  const pasos = [...document.querySelectorAll(".iPaso")];
+  const duracion = Math.floor((Date.now() - inv.inicio) / 1000);
+  clearInterval(inv.timer);
+  $("iFin").disabled = true;
+  const cuerpo = {
+    analista, ip: inv.ip, playbook: inv.pb.nombre, clasificacion: $("iClas").value, duracion_s: duracion,
+    pasos_hechos: pasos.filter((p) => p.checked).length, pasos_total: pasos.length,
+    contencion: [...document.querySelectorAll(".iCont:checked")].map((c) => c.dataset.c), notas: $("iNotas").value,
+  };
+  try {
+    const r = await fetch("/api/investigacion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+    if (!r.ok) throw new Error((await r.json()).error);
+    const ok = duracion < 300;
+    $("iRes").innerHTML = `<div class="resultado ${ok ? "" : "tarde"}">${ok ? "✓" : "✗"} Incidente cerrado por <b>${esc(analista)}</b> en <b>${durTxt(duracion)}</b> ${ok ? "(dentro de los 5 minutos de R8.7)" : "(pasó de los 5 minutos)"}. Quedó en el índice siem-investigaciones.</div>`;
+    refrescar();
+  } catch (e) {
+    $("iFin").disabled = false;
+    $("iRes").innerHTML = `<div class="resultado tarde">No se pudo guardar: ${esc(e.message)}</div>`;
+  }
+}
+
+$("mGuiada").onclick = iniciarInvestigacion;
+$("iCerrar").onclick = () => { if (inv) clearInterval(inv.timer); $("fondoInv").classList.remove("ver"); };
 $("fondo").onclick = (e) => { if (e.target === $("fondo")) $("fondo").classList.remove("ver"); };
 document.addEventListener("click", (e) => { const c = e.target.closest(".ipc[data-ip]"); if (c) investigar(c.dataset.ip); });
 
