@@ -32,7 +32,7 @@ Un SIEM sencillo y reproducible con un solo comando. Un servidor **víctima** ge
                    └─────────────────────┬────────────────────┘
                                          ▼
                    ┌──────────────────────────────────────────┐
-                   │ Kibana: Security (6 reglas) · Dashboards │
+                   │ Kibana: Security (7 reglas) · Dashboards │
                    └──────────────────────────────────────────┘
 ```
 
@@ -103,7 +103,7 @@ Es la forma recomendada de mostrar el proyecto. Kibana queda un clic más adentr
 <http://localhost:5601>: usuario `elastic` y la contraseña `ELASTIC_PASSWORD` del `.env`.
 
 - **Discover**, data view `SIEM - todos los logs`: los eventos en vivo.
-- **Security → Rules**: las 6 reglas cargadas.
+- **Security → Rules**: las 7 reglas cargadas.
 - **Security → Alerts**: las alertas.
 
 ### 5. Verificar (R8.1, R8.2 y R8.3)
@@ -165,6 +165,16 @@ Recorre los requisitos en orden (stack, verificación, dashboard ejecutivo, ataq
 bash scripts/demo.sh
 ```
 
+### 8c. Capturas de evidencia
+
+Con el stack arriba y Playwright instalado (`pip install playwright` y `playwright install chromium`):
+
+```bash
+python scripts/capturas.py
+```
+
+Guarda en `docs/evidencias/` el panel, los dos dashboards (el operacional filtrado por la IP atacante), las reglas, las alertas y el ILM.
+
 ### 9. Apagar
 
 ```bash
@@ -174,18 +184,18 @@ docker compose down -v     # borra todo (datos, certificados, logs)
 
 ## Cómo se cumple cada requisito
 
-Resultados medidos el 4 nov 2026: [docs/evidencias/resultados-2026-11-04.md](docs/evidencias/resultados-2026-11-04.md).
+Resultados de la corrida final, con capturas: [docs/evidencias/resultados-2026-11-18.md](docs/evidencias/resultados-2026-11-18.md). La primera prueba completa (con la demo acelerada de ILM) está en [resultados-2026-11-04.md](docs/evidencias/resultados-2026-11-04.md).
 
 | ID | Qué se hizo | Dónde | Resultado |
 | --- | --- | --- | --- |
 | R8.1 | 3 nodos con TLS; ILM `siem-30d` (borra a los 30 días) y `siem-demo` acelerada | `docker-compose.yml`, `setup/ilm/`, `scripts/demo-ilm.sh` | Clúster green; índices en warm y cold en 8 min |
 | R8.2 | auth.log, syslog y nginx reales en la víctima, más puertos señuelo; ECS por `ecs@mappings` | `victima/`, `filebeat/filebeat.yml`, `setup/templates/` | 4 fuentes visibles en Kibana |
-| R8.3 | grok, date, mutate, geoip, cidr y urldecode; los malformados van a `logs-siem.errores` con `error.message` | `logstash/pipeline/` | 99,08 % parseado |
-| R8.4 | 5 reglas, más la de inyección SQL | `reglas/` | Las 6 disparan |
-| R8.5 | Ataques reales: nmap, hydra, sqlmap y curl | `atacante/`, `scripts/atacar-y-medir.sh` | Alertas en 10 a 43 s |
+| R8.3 | grok, date, mutate, geoip, cidr y urldecode; los malformados van a `logs-siem.errores` con `error.message` | `logstash/pipeline/` | 99,16 % parseado |
+| R8.4 | 5 reglas pedidas, más inyección SQL y una de correlación EQL (fuerza bruta seguida de ingreso = cuenta comprometida) | `reglas/` | Las 7 disparan |
+| R8.5 | Ataques reales: nmap, hydra, sqlmap y curl | `atacante/`, `scripts/atacar-y-medir.sh` | Alertas en 13 a 28 s (la correlación, en 52 s) |
 | R8.6 | Dashboard ejecutivo con mapa, tendencia y salud | `kibana/construir_dashboards.py` | Listo |
 | R8.7 | Dashboard operacional con drill-down por IP | `kibana/construir_dashboards.py` | Investigación en menos de 1 min |
-| R8.8 | 2 playbooks: fuerza bruta SSH e inyección SQL | `docs/playbooks/` | Listos, con datos reales; falta la prueba cruzada |
+| R8.8 | 2 playbooks: fuerza bruta SSH e inyección SQL | `docs/playbooks/` | Probados 2 veces con ataques reales (4 y 18 nov) |
 
 ## Decisiones de diseño
 

@@ -28,7 +28,7 @@ paso "5. R8.7: dashboard operacional -> Top IPs -> 'Filter for' sobre la IP atac
 abrir "http://localhost:5601/app/dashboards#/view/siem-dashboard-operacional"
 pausa
 
-paso "6. R8.4: las 6 reglas de detección"
+paso "6. R8.4: las 7 reglas de detección (incluida la correlación EQL)"
 abrir "http://localhost:5601/app/security/rules"
 pausa
 

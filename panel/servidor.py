@@ -21,6 +21,13 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 ATAQUES = {"escaneo", "fuerza-bruta", "sqli", "rutas"}
 ALERTAS = ".alerts-security.alerts-default"
 TRABAJOS = {}
+# Las reglas EQL de secuencia guardan una alerta "building block" por cada evento de la secuencia,
+# además de la alerta real. Esas no se cuentan (Kibana tampoco las muestra por defecto).
+SIN_BB = [{"exists": {"field": "kibana.alert.building_block_type"}}]
+
+
+def q_alertas(*filtros):
+    return {"bool": {"filter": list(filtros), "must_not": SIN_BB}}
 
 
 def es(ruta, cuerpo=None):
@@ -43,10 +50,10 @@ def resumen():
     total = intenta(lambda: es("/logs-siem.*/_count")["count"], 0)
     errores = intenta(lambda: es("/logs-siem.errores-*/_count")["count"], 0)
     alertas_hoy = intenta(lambda: es(f"/{ALERTAS}/_count",
-                                     {"query": {"range": {"@timestamp": {"gte": "now/d"}}}})["count"], 0)
+                                     {"query": q_alertas({"range": {"@timestamp": {"gte": "now/d"}}})})["count"], 0)
 
     def sev():
-        b = es(f"/{ALERTAS}/_search", {"size": 0, "query": {"range": {"@timestamp": {"gte": "now/d"}}},
+        b = es(f"/{ALERTAS}/_search", {"size": 0, "query": q_alertas({"range": {"@timestamp": {"gte": "now/d"}}}),
                "aggs": {"s": {"terms": {"field": "kibana.alert.severity", "size": 5}}}})
         d = {x["key"]: x["doc_count"] for x in b["aggregations"]["s"]["buckets"]}
         return {k: d.get(k, 0) for k in ("critical", "high", "medium", "low")}
@@ -109,7 +116,7 @@ def alertas(desde):
     def q():
         r = es(f"/{ALERTAS}/_search", {"size": 15, "sort": [{"@timestamp": "desc"}],
                "_source": ["@timestamp", "kibana.alert.rule.name", "kibana.alert.severity", "source.ip", "user.name"],
-               "query": {"range": {"@timestamp": {"gte": desde}}}})
+               "query": q_alertas({"range": {"@timestamp": {"gte": desde}}})})
         salida = []
         for h in r["hits"]["hits"]:
             s = h["_source"]
@@ -165,8 +172,7 @@ def investigar_ip(ip):
         a = agg["aggregations"]
         total = agg["hits"]["total"]["value"]
         reglas = es(f"/{ALERTAS}/_search", {"size": 0,
-                    "query": {"bool": {"filter": [{"term": {"source.ip": ip}},
-                                                  {"range": {"@timestamp": {"gte": "now-24h"}}}]}},
+                    "query": q_alertas({"term": {"source.ip": ip}}, {"range": {"@timestamp": {"gte": "now-24h"}}}),
                     "aggs": {"r": {"terms": {"field": "kibana.alert.rule.name", "size": 10}}}})
         return {
             "ip": ip, "total": total,

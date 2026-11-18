@@ -1,0 +1,60 @@
+{
+  "rule_id": "siem-g5-acceso-tras-fuerza-bruta",
+  "name": "SIEM - Acceso tras fuerza bruta",
+  "description": "Correlación (EQL sequence): 5 intentos SSH fallidos y después un ingreso exitoso desde la misma IP en menos de 3 minutos. Significa que la fuerza bruta funcionó y la cuenta está comprometida. Playbook: docs/playbooks/fuerza-bruta-ssh.md",
+  "type": "eql",
+  "index": [
+    "logs-siem.auth-*"
+  ],
+  "language": "eql",
+  "query": "sequence by source.ip with maxspan=3m\n  [authentication where event.action == \"ssh_login\" and event.outcome == \"failure\"] with runs=5\n  [authentication where event.action == \"ssh_login\" and event.outcome == \"success\"]",
+  "severity": "critical",
+  "risk_score": 99,
+  "tags": [
+    "SIEM",
+    "SSH",
+    "Correlación",
+    "R8.4"
+  ],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0006",
+        "name": "Credential Access",
+        "reference": "https://attack.mitre.org/tactics/TA0006/"
+      },
+      "technique": [
+        {
+          "id": "T1110",
+          "name": "Brute Force",
+          "reference": "https://attack.mitre.org/techniques/T1110/"
+        }
+      ]
+    },
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0001",
+        "name": "Initial Access",
+        "reference": "https://attack.mitre.org/tactics/TA0001/"
+      },
+      "technique": [
+        {
+          "id": "T1078",
+          "name": "Valid Accounts",
+          "reference": "https://attack.mitre.org/techniques/T1078/"
+        }
+      ]
+    }
+  ],
+  "enabled": true,
+  "interval": "30s",
+  "from": "now-4m",
+  "author": [
+    "Grupo 5"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "max_signals": 100
+}

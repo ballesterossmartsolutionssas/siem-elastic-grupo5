@@ -9,6 +9,8 @@ from pathlib import Path
 
 DV_LOGS, DV_ALERTAS, DV_ERRORES = "logs-siem", "siem-alertas", "logs-siem-errores"
 HOY = '@timestamp >= "now/d"'
+# Las reglas EQL de secuencia guardan una alerta "building block" por evento, además de la alerta real.
+HOY_REALES = f'{HOY} and not kibana.alert.building_block_type : *'
 SOSPECHOSO = ('(event.dataset : "siem.auth" and event.outcome : "failure") or siem.sqli : true '
               'or siem.ruta_sensible : true or siem.herramienta_ataque : true or event.dataset : "siem.red"')
 
@@ -182,14 +184,14 @@ def tablero(oid, titulo, descripcion, paneles, desde, refresco_ms):
 # ============================================================================
 # Dashboard ejecutivo (R8.6): para gente no técnica
 # ============================================================================
-e1 = metrica("siem-e-alertas-hoy", "Alertas de hoy", DV_ALERTAS, c_count("Alertas de hoy", HOY), color="#E7664C")
+e1 = metrica("siem-e-alertas-hoy", "Alertas de hoy", DV_ALERTAS, c_count("Alertas de hoy", HOY_REALES), color="#E7664C")
 e2 = metrica("siem-e-graves-hoy", "Alertas graves de hoy (alta o crítica)", DV_ALERTAS,
-             c_count("Graves hoy", f'{HOY} and kibana.alert.severity : ("high" or "critical")'), color="#BD271E")
+             c_count("Graves hoy", f'{HOY_REALES} and kibana.alert.severity : ("high" or "critical")'), color="#BD271E")
 e3 = metrica("siem-e-ips", "IPs atacantes distintas (7 días)", DV_LOGS,
              c_unique("source.ip", "IPs atacantes", SOSPECHOSO))
 e4 = metrica("siem-e-eventos", "Eventos analizados", DV_LOGS, c_count("Eventos analizados"))
 e5 = barras("siem-e-top-amenazas", "Top amenazas de hoy", DV_ALERTAS,
-            c_terms("kibana.alert.rule.name", "Regla", "y", 10), c_count("Alertas", HOY), horizontal=True)
+            c_terms("kibana.alert.rule.name", "Regla", "y", 10), c_count("Alertas", HOY_REALES), horizontal=True)
 e6 = mapa("siem-e-mapa", "Mapa de IPs sospechosas", SOSPECHOSO)
 e7 = barras("siem-e-tendencia", "Ataques por día y tipo (tendencia semanal)", DV_LOGS,
             c_fecha("1d", "Día"), c_count("Eventos"),
@@ -217,7 +219,7 @@ ejecutivo = tablero(
 # ============================================================================
 o1 = busqueda("siem-o-alertas-abiertas", "Alertas activas", DV_ALERTAS,
               ["kibana.alert.rule.name", "kibana.alert.severity", "source.ip", "user.name", "kibana.alert.reason"],
-              'kibana.alert.workflow_status : "open"')
+              'kibana.alert.workflow_status : "open" and not kibana.alert.building_block_type : *')
 o2 = tabla("siem-o-top-ips", "Top IPs (clic para filtrar todo el tablero)", DV_LOGS, {
     "ip": c_terms("source.ip", "IP origen", "n", 10, "ip"),
     "n": c_count("Eventos"),

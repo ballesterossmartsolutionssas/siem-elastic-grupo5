@@ -1,12 +1,12 @@
 {
   "rule_id": "siem-g5-login-fuera-de-horario",
   "name": "SIEM - Login fuera de horario",
-  "description": "Ingreso SSH exitoso antes de las 7:00, después de las 19:00 (hora de Colombia) o en domingo. La bandera la calcula Logstash (20-auth.conf).",
+  "description": "Ingreso SSH exitoso antes de las 7:00, después de las 19:00 (hora de Colombia) o en domingo. La bandera la calcula Logstash (20-auth.conf). Excepción: cuentas de servicio conocidas (operador, la del monitoreo), que entran de noche a propósito.",
   "type": "query",
   "index": [
     "logs-siem.auth-*"
   ],
-  "query": "event.action : \"ssh_login\" and event.outcome : \"success\" and siem.fuera_de_horario : true",
+  "query": "event.action : \"ssh_login\" and event.outcome : \"success\" and siem.fuera_de_horario : true and not user.name : (\"operador\")",
   "severity": "medium",
   "risk_score": 50,
   "tags": [
@@ -40,6 +40,6 @@
     "Grupo 5"
   ],
   "license": "MIT",
-  "version": 1,
+  "version": 2,
   "max_signals": 100
 }

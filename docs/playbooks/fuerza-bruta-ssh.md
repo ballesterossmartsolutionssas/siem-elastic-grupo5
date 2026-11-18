@@ -2,8 +2,8 @@
 
 | Dato | Valor |
 | --- | --- |
-| Alertas | `SIEM - Fuerza bruta SSH` (alta) y, si el atacante entra, `SIEM - Login fuera de horario` |
-| Reglas | `reglas/01-fuerza-bruta-ssh.json`, `reglas/04-login-fuera-de-horario.json` |
+| Alertas | `SIEM - Fuerza bruta SSH` (alta) y, si el atacante entra, `SIEM - Acceso tras fuerza bruta` (crítica) y `SIEM - Login fuera de horario` |
+| Reglas | `reglas/01-fuerza-bruta-ssh.json`, `reglas/07-acceso-tras-fuerza-bruta.json` y `reglas/04-login-fuera-de-horario.json` |
 | Fuente | `logs-siem.auth-*` (auth.log de la víctima) |
 | MITRE ATT&CK | T1110 Brute Force → T1078 Valid Accounts |
 | Cómo simularlo | `bash scripts/atacar-y-medir.sh fuerza-bruta "SIEM - Fuerza bruta SSH"` |
@@ -17,7 +17,7 @@
 2. **Dashboards → `SIEM - Operacional`.** En la tabla *Top IPs*, pasar el mouse sobre la IP y darle a **Filter for** (la lupa con +). Todo el tablero queda filtrado por esa IP.
 3. Mirar *Top usuarios en SSH*:
    - Columna **Fallidos**: qué cuentas probó y cuántas veces.
-   - Columna **Exitosos**: **si hay algún número, el atacante entró.**
+   - Columna **Exitosos**: **si hay algún número, el atacante entró.** La alerta crítica `SIEM - Acceso tras fuerza bruta` ya lo dice sola.
 4. Mirar *Alertas activas*: ¿la misma IP tiene más alertas? (escaneo antes, login fuera de horario después).
 5. Clasificar:
 
@@ -75,6 +75,20 @@ source.ip : "<IP>" and event.dataset : "siem.auth"
 - Con el filtro por IP en el dashboard operacional, la historia completa (escaneo, fuerza bruta e ingreso) sale en una sola pantalla.
 
 **Qué mejorar:**
-- La regla de fuerza bruta alerta, pero no dice si hubo éxito. Hace falta una regla de correlación (EQL *sequence*): N fallos y luego un éxito de la misma IP, con severidad crítica.
-- El ingreso de `operador` que genera el tráfico normal también dispara «fuera de horario» de noche. Se arregla con una lista de excepciones para cuentas de servicio.
+- La regla de fuerza bruta alerta, pero no dice si hubo éxito. Hace falta una regla de correlación (EQL *sequence*): N fallos y luego un éxito de la misma IP, con severidad crítica. **Hecho el 18 nov** (`reglas/07-acceso-tras-fuerza-bruta.json`).
+- El ingreso de `operador` que genera el tráfico normal también dispara «fuera de horario» de noche. Se arregla con una lista de excepciones para cuentas de servicio. **Hecho el 18 nov** (`not user.name : ("operador")` en la regla 04).
 - Una clave de diccionario en una cuenta con `sudo` es el problema de fondo: SSH solo con llaves.
+
+## 6. Segunda ejecución del playbook (18 nov 2026)
+
+Se siguió el playbook paso a paso sobre el ataque de la corrida final ([resultados-2026-11-18.md](../evidencias/resultados-2026-11-18.md)):
+
+| Paso | Qué se vio | Tiempo |
+| --- | --- | --- |
+| 1. Security → Alerts | `Acceso tras fuerza bruta` (crítica) y `Fuerza bruta SSH` (alta), las dos desde `192.168.80.11` | < 1 min |
+| 2. Operacional, *Filter for* la IP | 79 eventos: 48 fallos, 19 puertos tocados y 3 alertas | < 1 min |
+| 3. Top usuarios en SSH | `root`: 25 fallos y 0 éxitos. `admin`: 23 fallos y **1 éxito** | inmediato |
+| 4. Clasificación | **Crítica: cuenta `admin` comprometida** (además, el ingreso fue a la 1:07 a. m.) | — |
+| 5. Contención (simulada) | `ufw deny from 192.168.80.11`, `pkill -KILL -u admin` y `passwd -l admin` | ≈ 2 min |
+
+Tiempo total del triage: unos 3 minutos, dentro del objetivo de 5. La alerta crítica nueva ahorra el paso de mirar la tabla de usuarios para saber si entró.
