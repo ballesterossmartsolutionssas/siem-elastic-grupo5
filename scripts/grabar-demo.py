@@ -16,6 +16,7 @@ Uso, desde la raíz del repo:
 Tarda unos 12 minutos (el ILM acelerado necesita ~6 min para llegar a cold).
 """
 import argparse
+import base64
 import html
 import json
 import shutil
@@ -47,6 +48,65 @@ ESTILO_SUB = """
 .resaltado-demo { outline: 4px solid #FEC514 !important; outline-offset: 4px; border-radius: 6px;
   transition: outline-color .3s; }
 """
+
+
+class Grabador:
+    """Graba una página con el screencast de Chromium: cuadros JPEG de alta calidad.
+
+    El video de Playwright (VP8 a menos de 1 Mbps) dejaba el texto borroso, con bloques que
+    aparecían y desaparecían. Aquí cada cuadro llega como JPEG de calidad 92 y el video se arma
+    al final con H.264. Mientras una página carga, la grabación se pausa (pausar/seguir).
+    """
+
+    def __init__(self, ctx, pag, carpeta):
+        self.pag, self.carpeta = pag, carpeta
+        carpeta.mkdir(parents=True, exist_ok=True)
+        self.eventos = []  # ("f", tiempo, ruta) | ("corte", tiempo)
+        self.n, self.activo = 0, False
+        self.cdp = ctx.new_cdp_session(pag)
+        self.cdp.on("Page.screencastFrame", self._cuadro)
+        self.cdp.send("Page.startScreencast", {"format": "jpeg", "quality": 92, "maxWidth": ANCHO,
+                                               "maxHeight": ALTO, "everyNthFrame": 1})
+        self.seguir()
+
+    def _guardar(self, datos, cuando):
+        ruta = self.carpeta / f"c{self.n:05d}.jpg"
+        self.n += 1
+        ruta.write_bytes(datos)
+        self.eventos.append(("f", cuando, ruta))
+
+    def _cuadro(self, ev):
+        try:
+            if self.activo:
+                self._guardar(base64.b64decode(ev["data"]), time.time())
+        finally:
+            self.cdp.send("Page.screencastFrameAck", {"sessionId": ev["sessionId"]})
+
+    def seguir(self):
+        # Chromium solo manda cuadros cuando algo cambia: se toma uno a mano para arrancar
+        self._guardar(self.pag.screenshot(type="jpeg", quality=92), time.time())
+        self.activo = True
+
+    def pausar(self):
+        self.activo = False
+        self.eventos.append(("corte", time.time()))
+
+    def terminar(self):
+        self.pausar()
+        try:
+            self.cdp.send("Page.stopScreencast")
+        except Exception:  # noqa: BLE001
+            pass
+
+    def lineas(self):
+        """Lista para el concat de ffmpeg: cada cuadro dura hasta el siguiente cuadro o el siguiente corte."""
+        salida = []
+        for i, ev in enumerate(self.eventos):
+            if ev[0] != "f":
+                continue
+            siguiente = self.eventos[i + 1][1] if i + 1 < len(self.eventos) else ev[1] + 0.5
+            salida.append(f"file '{ev[2].as_posix()}'\nduration {max(siguiente - ev[1], 0.001):.4f}\n")
+        return salida
 
 
 def env():
@@ -146,7 +206,10 @@ def main():
 
     # El ILM acelerado arranca ya: cuando lleguemos a esa escena habrá índices en warm y cold
     print("== ILM acelerado en segundo plano")
-    ilm = subprocess.Popen(["bash", "scripts/demo-ilm.sh"], cwd=RAIZ, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # En Windows, «bash» desde Python puede abrir el de WSL, que no tiene docker: el ILM fallaba en silencio.
+    git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
+    bash = str(git_bash) if git_bash.exists() else (shutil.which("bash") or "bash")
+    ilm = subprocess.Popen([bash, "scripts/demo-ilm.sh"], cwd=RAIZ, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     t_ilm = time.time()
 
     with sync_playwright() as p:
@@ -163,21 +226,32 @@ def main():
         sesion = ctx0.storage_state()
         ctx0.close()
 
+        grab = {}
+
         def escena(nombre, fn):
             print("== Escena:", nombre)
-            carpeta = trabajo / f"{len(escenas):02d}"
             ctx = nav.new_context(viewport={"width": ANCHO, "height": ALTO}, storage_state=sesion,
-                                  record_video_dir=str(carpeta), record_video_size={"width": ANCHO, "height": ALTO},
                                   locale="es-CO", timezone_id="America/Bogota")
             pag = ctx.new_page()
+            pag.set_content('<body style="margin:0;background:#0B1220"></body>')  # nada de blanco al arrancar
+            g = Grabador(ctx, pag, trabajo / f"{len(escenas):02d}")
+            grab["g"] = g
             try:
                 fn(pag)
             finally:
-                video = pag.video
+                g.terminar()
                 ctx.close()
-                escenas.append(Path(video.path()))
+                escenas.append(g)
+
+        def ir(pag, url, espera=3500):
+            """Navega sin grabar la carga: el video retoma cuando la página ya pintó."""
+            grab["g"].pausar()
+            pag.goto(url)
+            pag.wait_for_timeout(espera)
+            grab["g"].seguir()
 
         def kibana(pag, ruta, espera=9000):
+            grab["g"].pausar()
             pag.goto(KIBANA + ruta)
             try:
                 pag.wait_for_load_state("networkidle", timeout=40000)
@@ -189,6 +263,8 @@ def main():
                     b.click(timeout=1500)
                 except Exception:  # noqa: BLE001
                     pass
+            pag.wait_for_timeout(800)
+            grab["g"].seguir()
 
         # ---------------------------------------------------------------- 0. portada
         def portada(pag):
@@ -216,7 +292,7 @@ def main():
 
         # ---------------------------------------------------------------- 2. panel: cumplimiento y salud
         def panel(pag):
-            pag.goto(PANEL)
+            ir(pag, PANEL)
             pag.wait_for_timeout(5000)
             subtitulo(pag, "Panel SOC", "El centro de operaciones del grupo: localhost:8090",
                       "Arriba, cada requisito del enunciado (R8.1 a R8.8) con su medición real. Se pone en verde solo.")
@@ -236,7 +312,7 @@ def main():
         inicio_ataque = {}
 
         def ataque(pag):
-            pag.goto(PANEL)
+            ir(pag, PANEL)
             pag.wait_for_timeout(4000)
             resaltar(pag, 'button[data-a="fuerza-bruta"]')
             subtitulo(pag, "R8.5", "Ataque real: fuerza bruta contra el SSH de la víctima",
@@ -285,7 +361,7 @@ def main():
 
         # ---------------------------------------------------------------- 4. incidentes y ficha de la IP
         def incidentes(pag):
-            pag.goto(PANEL)
+            ir(pag, PANEL)
             pag.wait_for_timeout(5000)
             resaltar(pag, "#alertas tr.critica")
             subtitulo(pag, "R8.4", "Alrededor de un minuto después: una alerta CRÍTICA",
@@ -309,7 +385,7 @@ def main():
 
         # ---------------------------------------------------------------- 5. investigación guiada
         def guiada(pag):
-            pag.goto(PANEL)
+            ir(pag, PANEL)
             pag.wait_for_timeout(5000)
             pag.locator("#alertas tr.critica .ipc").first.click()
             pag.wait_for_timeout(2500)
@@ -422,7 +498,7 @@ def main():
             subtitulo(pag, "R8.1", "ILM: prueba acelerada pasando a warm y cold",
                       "La política siem-30d mueve los datos a warm el día 7, a cold el día 15 y los borra el día 30. Aquí, lo mismo en minutos.")
             pag.wait_for_timeout(10000)
-            pag.goto(PANEL)
+            ir(pag, PANEL)
             pag.wait_for_timeout(4500)
             resaltar(pag, "#fases")
             subtitulo(pag, "R8.1", "El panel ve los índices en cada fase",
@@ -432,7 +508,7 @@ def main():
 
         # ---------------------------------------------------------------- 12. playbook en el repo
         def repo(pag):
-            pag.goto(f"{REPO}/blob/main/docs/playbooks/fuerza-bruta-ssh.md")
+            ir(pag, f"{REPO}/blob/main/docs/playbooks/fuerza-bruta-ssh.md")
             pag.wait_for_timeout(5000)
             subtitulo(pag, "R8.8", "Los playbooks están en el repositorio",
                       "Investigación, contención, erradicación, recuperación y lecciones aprendidas, con la línea de tiempo real.")
@@ -462,14 +538,14 @@ def main():
     # ---------------------------------------------------------------- unir las escenas
     print("== Uniendo", len(escenas), "escenas con ffmpeg")
     lista = trabajo / "lista.txt"
-    # Una sola codificación, a los 25 fps nativos de Playwright (pasar a 30 duplicaba cuadros y el
-    # movimiento saltaba), saltando el primer instante de cada escena (un cuadro en blanco al cargar).
-    lista.write_text("".join(f"file '{Path(v).as_posix()}'\ninpoint 0.4\n" for v in escenas), encoding="utf-8")
+    lineas = [l for g in escenas for l in g.lineas()]
+    ultimo = [e for e in escenas[-1].eventos if e[0] == "f"][-1][2]
+    lista.write_text("".join(lineas) + f"file '{ultimo.as_posix()}'\n", encoding="utf-8")
     salida = Path(args.salida)
     salida.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista),
-                    "-vf", "fps=25,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "25",
-                    "-tune", "stillimage", "-g", "50", "-an", "-movflags", "+faststart", str(salida)], check=True)
+                    "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "20",
+                    "-tune", "stillimage", "-g", "60", "-an", "-movflags", "+faststart", str(salida)], check=True)
     print("Listo:", salida, f"({salida.stat().st_size / 1e6:.1f} MB)")
 
 
