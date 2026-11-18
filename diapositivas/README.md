@@ -1,12 +1,7 @@
 # Diapositivas
 
-Aquí va la presentación final (PDF o PPTX). Es un entregable: el enunciado pide subir las diapositivas al repositorio.
+- [SIEM-Grupo5.pptx](SIEM-Grupo5.pptx): la presentación (15 diapositivas). Las notas de cada una dicen quién habla y qué decir.
+- [SIEM-Grupo5.pdf](SIEM-Grupo5.pdf): la misma en PDF.
+- [guion-sustentacion.md](guion-sustentacion.md): reparto de tiempos, lista de chequeo, demo paso a paso, plan B, preguntas probables y guion del video de respaldo.
 
-Estructura sugerida (máximo 20 min entre presentación y sustentación):
-
-1. Problema: por qué un SIEM.
-2. Arquitectura: el diagrama del README.
-3. Demo en vivo: ataque → alerta en menos de 60 s → investigación en el dashboard operacional → playbook.
-4. Dashboard ejecutivo.
-5. Pruebas y resultados: tasa de parseo, tiempos de alerta e ILM.
-6. Conclusiones y lecciones aprendidas.
+Las capturas y los números salen de la corrida final del 18 nov 2026: [docs/evidencias/resultados-2026-11-18.md](../docs/evidencias/resultados-2026-11-18.md).
