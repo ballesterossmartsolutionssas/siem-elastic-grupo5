@@ -1,9 +1,3 @@
-
-
-https://github.com/user-attachments/assets/a7062bfd-a73d-4303-ad2e-abcd41875591
-
-
-
 # SIEM con Elastic Stack: Grupo 5
 
 Proyecto 8 de Computación en la Nube (541201, 2026-2S): plataforma de análisis de logs y seguridad con Elastic Stack.
@@ -15,6 +9,8 @@ Un SIEM sencillo y reproducible con un solo comando. Un servidor **víctima** ge
 ## Demo en video
 
 Recorrido de 5 minutos, sin audio y con subtítulos que explican cada parte: el stack, el panel con R8.1-R8.8, un ataque real con sus alertas, la investigación guiada, los dashboards, el índice de errores, Kubernetes y el ILM. Archivo: [diapositivas/demo-SIEM-Grupo5.mp4](diapositivas/demo-SIEM-Grupo5.mp4).
+
+https://github.com/user-attachments/assets/a7062bfd-a73d-4303-ad2e-abcd41875591
 
 ## Arquitectura
 
