@@ -1,3 +1,9 @@
+
+
+https://github.com/user-attachments/assets/a7062bfd-a73d-4303-ad2e-abcd41875591
+
+
+
 # SIEM con Elastic Stack: Grupo 5
 
 Proyecto 8 de Computación en la Nube (541201, 2026-2S): plataforma de análisis de logs y seguridad con Elastic Stack.
